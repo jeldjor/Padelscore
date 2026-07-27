@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#071018">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PadelScore">
+  <title>PadelScore League</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css?v=2.0.3">
+</head>
+<body>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <section id="loginScreen" class="screen login-screen">
+    <div class="brand brand-login">
+      <div class="brand-mark">P</div>
+      <div><h1>PadelScore</h1><p>League</p></div>
+    </div>
+    <div class="login-card">
+      <h2>Inloggen</h2>
+      <p class="muted">Log in met de gebruikersnaam die de beheerder heeft aangemaakt.</p>
+      <form id="loginForm">
+        <label>Gebruikersnaam<input id="loginUsername" autocomplete="username" autocapitalize="none" required></label>
+        <label>Wachtwoord<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+        <button class="btn primary full" type="submit">Inloggen</button>
+      </form>
+      <p class="demo-help">Nog geen account? De competitiebeheerder kan je toevoegen.</p>
+    </div>
+  </section>
+
+  <div id="appShell" class="app-shell hidden">
+    <header class="topbar">
+      <button id="backButton" class="icon-btn hidden" aria-label="Terug">‹</button>
+      <div class="brand compact">
+        <div class="brand-mark">P</div>
+        <div><strong>PadelScore</strong><span>League</span></div>
+      </div>
+      <div class="topbar-actions">
+        <span id="syncBadge" class="sync-badge">Demo</span>
+        <button id="profileButton" class="avatar-btn" aria-label="Profiel">G</button>
+      </div>
+    </header>
+    <main id="mainContent" class="main-content"></main>
+    <nav id="bottomNav" class="bottom-nav">
+      <button data-page="dashboard" class="active"><span>⌂</span>Overzicht</button>
+      <button data-page="calendar"><span>▦</span>Kalender</button>
+      <button data-page="playday"><span>●</span>Speeldag</button>
+      <button data-page="ranking"><span>♛</span>Ranglijst</button>
+      <button data-page="history"><span>↺</span>Historie</button>
+      <button data-page="admin" data-admin-only class="hidden"><span>⚙</span>Beheer</button>
+    </nav>
+  </div>
+
+  <div id="modalRoot"></div>
+
+  <div id="scoreboardOverlay" class="scoreboard-overlay hidden" aria-hidden="true">
+    <div class="scoreboard-topline">
+      <span class="live-pill"><i></i> LIVE</span>
+      <span id="xlTimer">00:00</span>
+      <button id="exitScoreboard" class="score-icon-btn" aria-label="Sluiten">✕</button>
+    </div>
+    <div class="scoreboard-grid">
+      <section class="score-team blue">
+        <div id="xlBlueNames" class="xl-names">BLAUW</div>
+        <div id="xlBluePoints" class="xl-points">0</div>
+        <button id="xlBlueAdd" class="xl-hit" aria-label="Punt blauw">+</button>
+      </section>
+      <section class="score-center">
+        <div class="score-label">GAMES</div>
+        <div class="xl-games"><span id="xlBlueGames">0</span><b>—</b><span id="xlRedGames">0</span></div>
+        <div id="xlServe" class="serve-pill">🎾 Blauw serveert</div>
+      </section>
+      <section class="score-team red">
+        <div id="xlRedNames" class="xl-names">ROOD</div>
+        <div id="xlRedPoints" class="xl-points">0</div>
+        <button id="xlRedAdd" class="xl-hit" aria-label="Punt rood">+</button>
+      </section>
+    </div>
+    <div id="xlControls" class="xl-controls">
+      <button id="xlUndo" class="btn ghost">↶ Ongedaan</button>
+      <button id="xlSpeak" class="btn ghost">🔊 Stand</button>
+      <button id="xlVoice" class="btn ghost">🎙 Stem</button>
+      <button id="xlServeToggle" class="btn ghost">🎾 Service</button>
+      <button id="xlTimeOver" class="btn danger">⏱ Tijd voorbij</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=2.0.3"></script>
+  <script src="scoring.js?v=2.0.3"></script>
+  <script src="db.js?v=2.0.3"></script>
+  <script src="app.js?v=2.0.3"></script>
+</body>
+</html>
