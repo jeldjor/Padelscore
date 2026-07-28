@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 230">
+ <defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#a8df18"/><stop offset="1" stop-color="#6cae00"/></linearGradient></defs>
+ <g transform="translate(76 12)">
+  <path d="M0 18h54l31 118 32-118h54l-58 176H57z" fill="#fff"/>
+  <path d="M171 18h54l31 118 32-118h54l-58 176h-56z" fill="url(#g)"/>
+  <g transform="translate(124 0)"><ellipse cx="47" cy="57" rx="39" ry="52" fill="#071a17" stroke="#fff" stroke-width="8"/><path d="M47 108v55" stroke="#fff" stroke-width="11" stroke-linecap="round"/><path d="M25 28c14 8 29 11 45 8M18 49c20 8 39 10 58 4M18 71c18 3 38 1 58-7M29 91c12-2 24-7 35-14M29 19c-1 26 4 50 16 72M50 12c4 26 3 52-3 80M70 21c-2 26-9 49-23 70" stroke="#91cf10" stroke-width="3" fill="none"/></g>
+ </g>
+ <text x="320" y="215" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="68" letter-spacing="2"><tspan fill="url(#g)">WE</tspan><tspan fill="#fff">PADEL</tspan></text>
+</svg>

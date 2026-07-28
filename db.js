@@ -32,8 +32,30 @@
     const d = new Date();
     return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   };
-  const fail = error => { throw new Error(error?.message || String(error || 'Er ging iets mis.')); };
+  const fail = error => {
+    const message = error?.message || error?.error_description || error?.error || String(error || 'Er ging iets mis.');
+    throw new Error(message === 'undefined' ? 'De sessie kon niet worden geopend. Log opnieuw in.' : message);
+  };
   const emit = () => window.dispatchEvent(new CustomEvent('padelscore:data-changed'));
+  const authStorageKey = (() => {
+    try { return `sb-${new URL(cfg.supabaseUrl).hostname.split('.')[0]}-auth-token`; }
+    catch { return ''; }
+  })();
+  function removeStoredSession() {
+    if (!authStorageKey) return;
+    try { localStorage.removeItem(authStorageKey); } catch {}
+    try { sessionStorage.removeItem(authStorageKey); } catch {}
+  }
+  async function clearLocalSession() {
+    if (channel) {
+      try { await client.removeChannel(channel); } catch {}
+      channel = null;
+    }
+    try { await client.auth.signOut({ scope: 'local' }); } catch {}
+    removeStoredSession();
+    session = null;
+    clearCache();
+  }
   const normalizePlayday = row => ({ ...row, date: row.play_date });
   const denormalizePlayday = input => ({
     ...(input.id ? { id: input.id } : {}),
@@ -44,7 +66,9 @@
     location: input.location || '',
     host_id: input.host_id,
     court_count: Math.max(1, Number(input.court_count) || 1),
-    status: input.status || 'planned'
+    status: input.status || 'planned',
+    cost_per_player: input.cost_per_player ?? null,
+    tikkie_url: input.tikkie_url || ''
   });
 
   async function callFunction(name, body, authenticated = true) {
@@ -63,8 +87,8 @@
       body: JSON.stringify(body)
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'De serveractie is mislukt.');
-    return data;
+    if (!response.ok) throw new Error(data?.error || data?.message || `De serveractie is mislukt (${response.status}).`);
+    return data || {};
   }
 
   async function loadAll() {
@@ -121,31 +145,52 @@
   }
 
   async function init() {
-    const result = await client.auth.getSession();
-    if (result.error) fail(result.error);
-    session = result.data.session;
     client.auth.onAuthStateChange((event, nextSession) => {
-      session = nextSession;
+      session = nextSession || null;
       if (event === 'SIGNED_OUT') clearCache();
     });
+    let result;
+    try { result = await client.auth.getSession(); }
+    catch { await clearLocalSession(); return null; }
+    if (result?.error) { await clearLocalSession(); return null; }
+    session = result?.data?.session || null;
     if (session) {
-      await loadAll();
-      subscribe();
+      try {
+        await loadAll();
+        subscribe();
+      } catch (error) {
+        const message = String(error?.message || error || '').toLowerCase();
+        if (message.includes('refresh token') || message.includes('jwt') || message.includes('session')) {
+          await clearLocalSession();
+          return null;
+        }
+        throw error;
+      }
     }
     return current();
   }
 
   async function login(username, password) {
+    // Een eerder gereset wachtwoord kan een oude refresh-token achterlaten.
+    // Ruim die lokaal op voordat een nieuwe login wordt opgeslagen.
+    await clearLocalSession();
     const result = await callFunction(cfg.loginFunctionName || 'username-login', {
       username: String(username || '').trim().toLowerCase(),
       password: String(password || '')
     }, false);
+    if (!result?.access_token || !result?.refresh_token) {
+      throw new Error('De server gaf geen geldige sessie terug. Probeer opnieuw.');
+    }
     const set = await client.auth.setSession({
       access_token: result.access_token,
       refresh_token: result.refresh_token
     });
-    if (set.error) fail(set.error);
-    session = set.data.session;
+    if (set?.error) {
+      await clearLocalSession();
+      fail(set.error);
+    }
+    session = set?.data?.session || null;
+    if (!session) throw new Error('De login kon niet worden opgeslagen. Probeer opnieuw.');
     await loadAll();
     subscribe();
     const me = current();
@@ -157,13 +202,8 @@
   }
 
   async function logout() {
-    if (channel) {
-      await client.removeChannel(channel);
-      channel = null;
-    }
-    await client.auth.signOut();
-    session = null;
-    clearCache();
+    try { await client.auth.signOut(); } catch {}
+    await clearLocalSession();
   }
 
   function current() {
@@ -188,7 +228,7 @@
   const listUsers = () => clone(cache.users).sort((a,b) => a.display_name.localeCompare(b.display_name, 'nl'));
   const listPlaydays = () => clone(cache.playdays).sort((a,b) => a.date.localeCompare(b.date));
   const getPlayday = id => clone(cache.playdays.find(p => p.id === id) || null);
-  const listRsvps = playdayId => clone(cache.rsvps.filter(r => r.playday_id === playdayId));
+  const listRsvps = playdayId => clone(cache.rsvps.filter(r => !playdayId || r.playday_id === playdayId));
   const listAttendance = playdayId => clone(cache.attendance.filter(a => a.playday_id === playdayId));
   const listMatches = playdayId => clone(cache.matches.filter(m => !playdayId || m.playday_id === playdayId));
   const listReviews = playdayId => clone(cache.reviews.filter(r => r.playday_id === playdayId));
@@ -215,12 +255,25 @@
 
   async function changePassword(oldPassword, newPassword) {
     requireUser();
-    await callFunction(cfg.adminFunctionName || 'admin-users', {
+    const result = await callFunction(cfg.adminFunctionName || 'admin-users', {
       action: 'change_own_password',
       old_password: oldPassword,
       new_password: newPassword
     });
-    await client.auth.refreshSession();
+    if (!result?.access_token || !result?.refresh_token) {
+      await clearLocalSession();
+      throw new Error('Het wachtwoord is gewijzigd. Log opnieuw in met je nieuwe wachtwoord.');
+    }
+    removeStoredSession();
+    const set = await client.auth.setSession({
+      access_token: result.access_token,
+      refresh_token: result.refresh_token
+    });
+    if (set?.error || !set?.data?.session) {
+      await clearLocalSession();
+      throw new Error('Het wachtwoord is gewijzigd. Log opnieuw in met je nieuwe wachtwoord.');
+    }
+    session = set.data.session;
     return loadAll();
   }
 
@@ -253,9 +306,6 @@
 
   async function deletePlayday(id) {
     requireAdmin();
-    if (cache.matches.some(m => m.playday_id === id && !m.deleted_at)) {
-      throw new Error('Deze speeldag heeft wedstrijden en kan alleen geannuleerd worden.');
-    }
     const { error } = await client.from('playdays').delete().eq('id', id);
     if (error) fail(error);
     return loadAll();
@@ -263,7 +313,7 @@
 
   async function setRsvp(playdayId, response) {
     const me = requireUser();
-    if (!['playing','not_playing','maybe'].includes(response)) throw new Error('Ongeldige keuze.');
+    if (!['playing','not_playing'].includes(response)) throw new Error('Ongeldige keuze.');
     const attendance = cache.attendance.find(a => a.playday_id === playdayId && a.user_id === me.id);
     if (attendance && response !== 'playing') {
       throw new Error('Je bent al in de lobby. Je aanmelding kan voor deze speeldag niet meer worden gewijzigd.');

@@ -6,22 +6,23 @@
   <meta name="theme-color" content="#071018">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="PadelScore">
-  <title>PadelScore League</title>
+  <meta name="apple-mobile-web-app-title" content="WEPADEL">
+  <title>WEPADEL</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3.0.0">
 </head>
 <body>
   <div id="toast" class="toast" aria-live="polite"></div>
 
   <section id="loginScreen" class="screen login-screen">
-    <div class="brand brand-login">
-      <div class="brand-mark">P</div>
-      <div><h1>PadelScore</h1><p>League</p></div>
+    <div class="court-lines"></div>
+    <div class="splash-brand">
+      <img src="logo-wepadel.svg" class="wepadel-logo" alt="WEPADEL">
+      <div class="padel-ball"></div>
     </div>
     <div class="login-card">
-      <h2>Inloggen</h2>
+      <h2>Welkom bij WEPADEL</h2>
       <p class="muted">Log in met de gebruikersnaam die de beheerder heeft aangemaakt.</p>
       <form id="loginForm">
         <label>Gebruikersnaam<input id="loginUsername" autocomplete="username" autocapitalize="none" required></label>
@@ -30,17 +31,15 @@
       </form>
       <p class="demo-help">Nog geen account? De competitiebeheerder kan je toevoegen.</p>
     </div>
+    <div class="powered"><span>POWERED BY</span><img src="logo-gjmotion.svg" alt="GJmotion"></div>
   </section>
 
   <div id="appShell" class="app-shell hidden">
     <header class="topbar">
       <button id="backButton" class="icon-btn hidden" aria-label="Terug">‹</button>
-      <div class="brand compact">
-        <div class="brand-mark">P</div>
-        <div><strong>PadelScore</strong><span>League</span></div>
-      </div>
+      <div class="brand compact"><img src="logo-wepadel.svg" alt="WEPADEL"></div>
       <div class="topbar-actions">
-        <span id="syncBadge" class="sync-badge">Demo</span>
+        <span id="syncBadge" class="sync-badge">Online</span>
         <button id="profileButton" class="avatar-btn" aria-label="Profiel">G</button>
       </div>
     </header>
@@ -48,9 +47,9 @@
     <nav id="bottomNav" class="bottom-nav">
       <button data-page="dashboard" class="active"><span>⌂</span>Overzicht</button>
       <button data-page="calendar"><span>▦</span>Kalender</button>
-      <button data-page="playday"><span>●</span>Speeldag</button>
-      <button data-page="ranking"><span>♛</span>Ranglijst</button>
-      <button data-page="history"><span>↺</span>Historie</button>
+      <button data-page="playday"><span>☷</span>Speeldagen</button>
+      <button data-page="ranking"><span>▥</span>Statistieken</button>
+      <button data-page="history"><span>☰</span>Menu</button>
       <button data-page="admin" data-admin-only class="hidden"><span>⚙</span>Beheer</button>
     </nav>
   </div>
@@ -89,10 +88,10 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.8"></script>
-  <script src="config.js"></script>
-  <script src="scoring.js"></script>
-  <script src="db.js"></script>
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=3.0.0"></script>
+  <script src="scoring.js?v=3.0.0"></script>
+  <script src="db.js?v=3.0.0"></script>
+  <script src="app.js?v=3.0.0"></script>
 </body>
 </html>
