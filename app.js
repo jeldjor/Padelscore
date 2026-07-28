@@ -2,13 +2,6 @@
   'use strict';
   const DB = window.PadelDB;
   const S = window.PadelScoring;
-  if (!DB) {
-    document.addEventListener('DOMContentLoaded', () => {
-      const toast = document.querySelector('#toast');
-      if (toast) { toast.textContent = 'Online database kon niet worden geladen. Vernieuw de pagina.'; toast.className = 'toast show error'; }
-    });
-    return;
-  }
   const $ = (s, root=document) => root.querySelector(s);
   const $$ = (s, root=document) => [...root.querySelectorAll(s)];
   const esc = v => String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));

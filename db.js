@@ -32,30 +32,8 @@
     const d = new Date();
     return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   };
-  const fail = error => {
-    const message = error?.message || error?.error_description || error?.error || String(error || 'Er ging iets mis.');
-    throw new Error(message === 'undefined' ? 'De sessie kon niet worden geopend. Log opnieuw in.' : message);
-  };
+  const fail = error => { throw new Error(error?.message || String(error || 'Er ging iets mis.')); };
   const emit = () => window.dispatchEvent(new CustomEvent('padelscore:data-changed'));
-  const authStorageKey = (() => {
-    try { return `sb-${new URL(cfg.supabaseUrl).hostname.split('.')[0]}-auth-token`; }
-    catch { return ''; }
-  })();
-  function removeStoredSession() {
-    if (!authStorageKey) return;
-    try { localStorage.removeItem(authStorageKey); } catch {}
-    try { sessionStorage.removeItem(authStorageKey); } catch {}
-  }
-  async function clearLocalSession() {
-    if (channel) {
-      try { await client.removeChannel(channel); } catch {}
-      channel = null;
-    }
-    try { await client.auth.signOut({ scope: 'local' }); } catch {}
-    removeStoredSession();
-    session = null;
-    clearCache();
-  }
   const normalizePlayday = row => ({ ...row, date: row.play_date });
   const denormalizePlayday = input => ({
     ...(input.id ? { id: input.id } : {}),
@@ -85,8 +63,8 @@
       body: JSON.stringify(body)
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data?.error || data?.message || `De serveractie is mislukt (${response.status}).`);
-    return data || {};
+    if (!response.ok) throw new Error(data.error || 'De serveractie is mislukt.');
+    return data;
   }
 
   async function loadAll() {
@@ -143,52 +121,31 @@
   }
 
   async function init() {
+    const result = await client.auth.getSession();
+    if (result.error) fail(result.error);
+    session = result.data.session;
     client.auth.onAuthStateChange((event, nextSession) => {
-      session = nextSession || null;
+      session = nextSession;
       if (event === 'SIGNED_OUT') clearCache();
     });
-    let result;
-    try { result = await client.auth.getSession(); }
-    catch { await clearLocalSession(); return null; }
-    if (result?.error) { await clearLocalSession(); return null; }
-    session = result?.data?.session || null;
     if (session) {
-      try {
-        await loadAll();
-        subscribe();
-      } catch (error) {
-        const message = String(error?.message || error || '').toLowerCase();
-        if (message.includes('refresh token') || message.includes('jwt') || message.includes('session')) {
-          await clearLocalSession();
-          return null;
-        }
-        throw error;
-      }
+      await loadAll();
+      subscribe();
     }
     return current();
   }
 
   async function login(username, password) {
-    // Een eerder gereset wachtwoord kan een oude refresh-token achterlaten.
-    // Ruim die lokaal op voordat een nieuwe login wordt opgeslagen.
-    await clearLocalSession();
     const result = await callFunction(cfg.loginFunctionName || 'username-login', {
       username: String(username || '').trim().toLowerCase(),
       password: String(password || '')
     }, false);
-    if (!result?.access_token || !result?.refresh_token) {
-      throw new Error('De server gaf geen geldige sessie terug. Probeer opnieuw.');
-    }
     const set = await client.auth.setSession({
       access_token: result.access_token,
       refresh_token: result.refresh_token
     });
-    if (set?.error) {
-      await clearLocalSession();
-      fail(set.error);
-    }
-    session = set?.data?.session || null;
-    if (!session) throw new Error('De login kon niet worden opgeslagen. Probeer opnieuw.');
+    if (set.error) fail(set.error);
+    session = set.data.session;
     await loadAll();
     subscribe();
     const me = current();
@@ -200,8 +157,13 @@
   }
 
   async function logout() {
-    try { await client.auth.signOut(); } catch {}
-    await clearLocalSession();
+    if (channel) {
+      await client.removeChannel(channel);
+      channel = null;
+    }
+    await client.auth.signOut();
+    session = null;
+    clearCache();
   }
 
   function current() {
@@ -253,25 +215,12 @@
 
   async function changePassword(oldPassword, newPassword) {
     requireUser();
-    const result = await callFunction(cfg.adminFunctionName || 'admin-users', {
+    await callFunction(cfg.adminFunctionName || 'admin-users', {
       action: 'change_own_password',
       old_password: oldPassword,
       new_password: newPassword
     });
-    if (!result?.access_token || !result?.refresh_token) {
-      await clearLocalSession();
-      throw new Error('Het wachtwoord is gewijzigd. Log opnieuw in met je nieuwe wachtwoord.');
-    }
-    removeStoredSession();
-    const set = await client.auth.setSession({
-      access_token: result.access_token,
-      refresh_token: result.refresh_token
-    });
-    if (set?.error || !set?.data?.session) {
-      await clearLocalSession();
-      throw new Error('Het wachtwoord is gewijzigd. Log opnieuw in met je nieuwe wachtwoord.');
-    }
-    session = set.data.session;
+    await client.auth.refreshSession();
     return loadAll();
   }
 
