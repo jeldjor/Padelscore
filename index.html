@@ -10,7 +10,7 @@
   <title>WEPADEL</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=3.0.0">
+  <link rel="stylesheet" href="styles.css?v=3.0.1">
 </head>
 <body>
   <div id="toast" class="toast" aria-live="polite"></div>
@@ -32,6 +32,15 @@
       <p class="demo-help">Nog geen account? De competitiebeheerder kan je toevoegen.</p>
     </div>
     <div class="powered"><span>POWERED BY</span><img src="logo-gjmotion.svg" alt="GJmotion"></div>
+  </section>
+
+  <section id="poweredScreen" class="screen powered-screen hidden" aria-hidden="true">
+    <div class="powered-stage">
+      <img src="logo-wepadel.svg" class="transition-wepadel" alt="WEPADEL League">
+      <div class="transition-divider"></div>
+      <span class="transition-powered">POWERED BY</span>
+      <img src="logo-gjmotion.svg" class="transition-gj" alt="GJ Motion">
+    </div>
   </section>
 
   <div id="appShell" class="app-shell hidden">
@@ -89,9 +98,9 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=3.0.0"></script>
-  <script src="scoring.js?v=3.0.0"></script>
-  <script src="db.js?v=3.0.0"></script>
-  <script src="app.js?v=3.0.0"></script>
+  <script src="config.js?v=3.0.1"></script>
+  <script src="scoring.js?v=3.0.1"></script>
+  <script src="db.js?v=3.0.1"></script>
+  <script src="app.js?v=3.0.1"></script>
 </body>
 </html>

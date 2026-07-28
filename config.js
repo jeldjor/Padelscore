@@ -4,5 +4,5 @@ window.PADEL_CONFIG = {
   adminFunctionName: 'admin-users',
   loginFunctionName: 'username-login',
   competitionName: 'WEPADEL',
-  appVersion: '3.0.0'
+  appVersion: '3.0.1'
 };

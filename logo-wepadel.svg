@@ -1,9 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 230">
- <defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#a8df18"/><stop offset="1" stop-color="#6cae00"/></linearGradient></defs>
- <g transform="translate(76 12)">
-  <path d="M0 18h54l31 118 32-118h54l-58 176H57z" fill="#fff"/>
-  <path d="M171 18h54l31 118 32-118h54l-58 176h-56z" fill="url(#g)"/>
-  <g transform="translate(124 0)"><ellipse cx="47" cy="57" rx="39" ry="52" fill="#071a17" stroke="#fff" stroke-width="8"/><path d="M47 108v55" stroke="#fff" stroke-width="11" stroke-linecap="round"/><path d="M25 28c14 8 29 11 45 8M18 49c20 8 39 10 58 4M18 71c18 3 38 1 58-7M29 91c12-2 24-7 35-14M29 19c-1 26 4 50 16 72M50 12c4 26 3 52-3 80M70 21c-2 26-9 49-23 70" stroke="#91cf10" stroke-width="3" fill="none"/></g>
- </g>
- <text x="320" y="215" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="68" letter-spacing="2"><tspan fill="url(#g)">WE</tspan><tspan fill="#fff">PADEL</tspan></text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 760" role="img" aria-labelledby="title desc">
+  <title id="title">WEPADEL League</title>
+  <desc id="desc">Padelracket met vleugels en bal in groen en wit.</desc>
+  <defs>
+    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b6ef27"/>
+      <stop offset="1" stop-color="#72b900"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity=".45"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M84 340 220 402 184 456 64 382z" fill="url(#lime)"/>
+    <path d="M62 402 202 462 168 510 42 444z" fill="url(#lime)" opacity=".92"/>
+    <path d="M556 340 420 402 456 456 576 382z" fill="url(#lime)"/>
+    <path d="M578 402 438 462 472 510 598 444z" fill="url(#lime)" opacity=".92"/>
+    <ellipse cx="320" cy="244" rx="112" ry="142" fill="#081814" stroke="#fff" stroke-width="18"/>
+    <path d="M320 383v104" stroke="#fff" stroke-width="26" stroke-linecap="round"/>
+    <path d="M282 481h76l-38 52z" fill="#fff"/>
+    <g fill="#fff">
+      <circle cx="274" cy="170" r="7"/><circle cx="305" cy="165" r="7"/><circle cx="336" cy="165" r="7"/><circle cx="367" cy="170" r="7"/>
+      <circle cx="258" cy="201" r="7"/><circle cx="290" cy="198" r="7"/><circle cx="320" cy="197" r="7"/><circle cx="350" cy="198" r="7"/><circle cx="382" cy="201" r="7"/>
+      <circle cx="252" cy="234" r="7"/><circle cx="282" cy="231" r="7"/><circle cx="320" cy="230" r="7"/><circle cx="358" cy="231" r="7"/><circle cx="388" cy="234" r="7"/>
+      <circle cx="258" cy="267" r="7"/><circle cx="290" cy="264" r="7"/><circle cx="320" cy="263" r="7"/><circle cx="350" cy="264" r="7"/><circle cx="382" cy="267" r="7"/>
+      <circle cx="274" cy="299" r="7"/><circle cx="305" cy="296" r="7"/><circle cx="336" cy="296" r="7"/><circle cx="367" cy="299" r="7"/>
+    </g>
+    <circle cx="320" cy="455" r="34" fill="url(#lime)" stroke="#081814" stroke-width="8"/>
+    <path d="M292 447c18 5 37 5 56 0M303 426c-2 18 4 35 17 52M337 426c2 18-4 35-17 52" fill="none" stroke="#efffc7" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="320" y="625" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="92" letter-spacing="1"><tspan fill="url(#lime)">WE</tspan><tspan fill="#fff">PADEL</tspan></text>
+  <path d="M120 680h105M415 680h105" stroke="url(#lime)" stroke-width="6" stroke-linecap="round"/>
+  <text x="320" y="698" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="30" letter-spacing="12" fill="#fff">LEAGUE</text>
 </svg>

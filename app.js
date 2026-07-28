@@ -37,8 +37,30 @@
   function selectedPlayday(){ if(state.selectedPlaydayId) return playdayById(state.selectedPlaydayId); const t=todayISO(); return DB.listPlaydays().find(p=>p.date===t) || DB.listPlaydays().find(p=>p.date>=t) || DB.listPlaydays().at(-1); }
   function participants(pdId){ const users=userMap(); return DB.listAttendance(pdId).map(a=>({...a,user:users.get(a.user_id)})).filter(x=>x.user); }
 
-  function showApp(){ $('#loginScreen').classList.add('hidden'); $('#appShell').classList.remove('hidden'); const me=current(); $('#profileButton').textContent=(me?.display_name||'?').slice(0,1).toUpperCase(); $$('[data-admin-only]').forEach(el=>el.classList.toggle('hidden',!isAdmin())); $('#syncBadge').textContent=DB.mode==='demo'?'Demo':'Online'; $('#syncBadge').classList.toggle('online',DB.mode!=='demo'); if(me?.must_change_password) openPasswordModal(true); render(); }
-  function showLogin(){ $('#appShell').classList.add('hidden'); $('#loginScreen').classList.remove('hidden'); }
+  function activateApp(){
+    $('#loginScreen').classList.add('hidden');
+    $('#poweredScreen').classList.add('hidden');
+    $('#poweredScreen').setAttribute('aria-hidden','true');
+    $('#appShell').classList.remove('hidden');
+    const me=current();
+    $('#profileButton').textContent=(me?.display_name||'?').slice(0,1).toUpperCase();
+    $$('[data-admin-only]').forEach(el=>el.classList.toggle('hidden',!isAdmin()));
+    $('#syncBadge').textContent=DB.mode==='demo'?'Demo':'Online';
+    $('#syncBadge').classList.toggle('online',DB.mode!=='demo');
+    if(me?.must_change_password) openPasswordModal(true);
+    render();
+  }
+  function showApp(withPoweredScreen=false){
+    if(!withPoweredScreen){ activateApp(); return; }
+    $('#loginScreen').classList.add('hidden');
+    $('#appShell').classList.add('hidden');
+    const screen=$('#poweredScreen');
+    screen.classList.remove('hidden','leaving');
+    screen.setAttribute('aria-hidden','false');
+    window.setTimeout(()=>screen.classList.add('leaving'),2100);
+    window.setTimeout(activateApp,2450);
+  }
+  function showLogin(){ $('#appShell').classList.add('hidden'); $('#poweredScreen').classList.add('hidden'); $('#loginScreen').classList.remove('hidden'); }
   function navigate(page){ state.page=page; if(page==='playday') state.playdayList=true; $$('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); render(); }
   function render(){ const main=$('#mainContent'); if(!current()){showLogin();return;} const pages={dashboard:renderDashboard,calendar:renderCalendar,playday:renderPlayday,ranking:renderRanking,history:renderHistory,admin:renderAdmin}; main.innerHTML=(pages[state.page]||renderDashboard)(); bindPage(); }
 
@@ -168,7 +190,7 @@
   function openProfile(){ const me=current();modal('Mijn profiel',`<div class="list"><div class="list-row"><div class="list-main"><strong>${esc(me.display_name)}</strong><span>@${esc(me.username)} · ${me.role==='admin'?'beheerder':'speler'}</span></div></div></div><div class="action-row" style="margin-top:14px"><button class="btn ghost" id="changePw">Wachtwoord wijzigen</button><button class="btn danger" id="logoutBtn">Uitloggen</button></div>`,()=>{$('#changePw').onclick=()=>openPasswordModal(false);$('#logoutBtn').onclick=async()=>{await DB.logout();closeModal();showLogin();};}); }
 
   function bindGlobal(){
-    $('#loginForm').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button[type=submit]');button.disabled=true;button.textContent='Inloggen…';try{await DB.login($('#loginUsername').value,$('#loginPassword').value);showApp();}catch(err){toast(err.message,true);}finally{button.disabled=false;button.textContent='Inloggen';}};
+    $('#loginForm').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button[type=submit]');button.disabled=true;button.textContent='Inloggen…';try{await DB.login($('#loginUsername').value,$('#loginPassword').value);showApp(true);}catch(err){toast(err.message,true);}finally{button.disabled=false;button.textContent='Inloggen';}};
     $$('#bottomNav button').forEach(b=>b.onclick=()=>navigate(b.dataset.page)); $('#profileButton').onclick=openProfile;
     $('#exitScoreboard').onclick=closeScoreboard; $('#xlBlueAdd').onclick=e=>{e.stopPropagation();point(state.scoreboardMatchId,'blue',true);scheduleControlsHide();}; $('#xlRedAdd').onclick=e=>{e.stopPropagation();point(state.scoreboardMatchId,'red',true);scheduleControlsHide();}; $('#xlUndo').onclick=e=>{e.stopPropagation();updateScore(state.scoreboardMatchId,S.undo(getMatch(state.scoreboardMatchId).score_state),true);scheduleControlsHide();}; $('#xlSpeak').onclick=e=>{e.stopPropagation();speakMatch(getMatch(state.scoreboardMatchId));scheduleControlsHide();}; $('#xlVoice').onclick=e=>{e.stopPropagation();state.recognition?stopVoice():startVoice();scheduleControlsHide();}; $('#xlServeToggle').onclick=e=>{e.stopPropagation();updateScore(state.scoreboardMatchId,S.switchServer(getMatch(state.scoreboardMatchId).score_state),true);scheduleControlsHide();}; $('#xlTimeOver').onclick=e=>{e.stopPropagation();finishTimeOver(state.scoreboardMatchId);}; $('#scoreboardOverlay').onclick=()=>scheduleControlsHide();
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.scoreboardMatchId)requestWakeLock();});
