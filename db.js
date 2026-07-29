@@ -66,7 +66,9 @@
     location: input.location || '',
     host_id: input.host_id,
     court_count: Math.max(1, Number(input.court_count) || 1),
-    status: input.status || 'planned'
+    status: input.status || 'planned',
+    cost_per_player: input.cost_per_player ?? null,
+    tikkie_url: input.tikkie_url || ''
   });
 
   async function callFunction(name, body, authenticated = true) {
@@ -226,7 +228,7 @@
   const listUsers = () => clone(cache.users).sort((a,b) => a.display_name.localeCompare(b.display_name, 'nl'));
   const listPlaydays = () => clone(cache.playdays).sort((a,b) => a.date.localeCompare(b.date));
   const getPlayday = id => clone(cache.playdays.find(p => p.id === id) || null);
-  const listRsvps = playdayId => clone(cache.rsvps.filter(r => r.playday_id === playdayId));
+  const listRsvps = playdayId => clone(cache.rsvps.filter(r => !playdayId || r.playday_id === playdayId));
   const listAttendance = playdayId => clone(cache.attendance.filter(a => a.playday_id === playdayId));
   const listMatches = playdayId => clone(cache.matches.filter(m => !playdayId || m.playday_id === playdayId));
   const listReviews = playdayId => clone(cache.reviews.filter(r => r.playday_id === playdayId));
@@ -304,9 +306,6 @@
 
   async function deletePlayday(id) {
     requireAdmin();
-    if (cache.matches.some(m => m.playday_id === id && !m.deleted_at)) {
-      throw new Error('Deze speeldag heeft wedstrijden en kan alleen geannuleerd worden.');
-    }
     const { error } = await client.from('playdays').delete().eq('id', id);
     if (error) fail(error);
     return loadAll();
@@ -314,7 +313,7 @@
 
   async function setRsvp(playdayId, response) {
     const me = requireUser();
-    if (!['playing','not_playing','maybe'].includes(response)) throw new Error('Ongeldige keuze.');
+    if (!['playing','not_playing'].includes(response)) throw new Error('Ongeldige keuze.');
     const attendance = cache.attendance.find(a => a.playday_id === playdayId && a.user_id === me.id);
     if (attendance && response !== 'playing') {
       throw new Error('Je bent al in de lobby. Je aanmelding kan voor deze speeldag niet meer worden gewijzigd.');

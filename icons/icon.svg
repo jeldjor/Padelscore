@@ -1,17 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
- <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b6ef27"/><stop offset="1" stop-color="#72b900"/></linearGradient></defs>
- <rect width="512" height="512" rx="108" fill="#04110f"/>
- <path d="M63 236l120 55-32 50-106-66zM449 236l-120 55 32 50 106-66zM45 293l122 52-29 44-111-60zM467 293l-122 52 29 44 111-60z" fill="url(#g)"/>
- <ellipse cx="256" cy="180" rx="87" ry="111" fill="#081814" stroke="#fff" stroke-width="14"/>
- <path d="M256 291v77" stroke="#fff" stroke-width="21" stroke-linecap="round"/>
- <path d="M226 363h60l-30 42z" fill="#fff"/>
- <g fill="#fff">
-  <circle cx="220" cy="127" r="6"/><circle cx="244" cy="123" r="6"/><circle cx="268" cy="123" r="6"/><circle cx="292" cy="127" r="6"/>
-  <circle cx="207" cy="153" r="6"/><circle cx="232" cy="150" r="6"/><circle cx="256" cy="149" r="6"/><circle cx="280" cy="150" r="6"/><circle cx="305" cy="153" r="6"/>
-  <circle cx="202" cy="180" r="6"/><circle cx="226" cy="177" r="6"/><circle cx="256" cy="176" r="6"/><circle cx="286" cy="177" r="6"/><circle cx="310" cy="180" r="6"/>
-  <circle cx="207" cy="207" r="6"/><circle cx="232" cy="204" r="6"/><circle cx="256" cy="203" r="6"/><circle cx="280" cy="204" r="6"/><circle cx="305" cy="207" r="6"/>
-  <circle cx="220" cy="233" r="6"/><circle cx="244" cy="230" r="6"/><circle cx="268" cy="230" r="6"/><circle cx="292" cy="233" r="6"/>
- </g>
- <circle cx="256" cy="343" r="27" fill="url(#g)" stroke="#081814" stroke-width="6"/>
- <text x="256" y="470" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="57"><tspan fill="url(#g)">WE</tspan><tspan fill="#fff">PADEL</tspan></text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#b5e82c"/><stop offset="1" stop-color="#78b906"/></linearGradient></defs><rect width="512" height="512" rx="96" fill="#061512"/><path d="M70 116h76l45 185 45-185h76l-82 276h-79z" fill="#fff"/><path d="M277 116h72l35 143 36-143h72l-74 276h-69z" fill="url(#g)"/><ellipse cx="257" cy="145" rx="48" ry="64" fill="#071a17" stroke="#fff" stroke-width="12"/><path d="M257 209v83" stroke="#fff" stroke-width="16" stroke-linecap="round"/><g stroke="#91cf10" stroke-width="4" fill="none"><path d="M226 109c22 14 43 15 65 4M218 139c25 10 51 9 76-3M224 171c23 0 46-7 66-22M231 91c0 30 7 58 24 84M259 82c5 31 3 62-6 94M286 96c-2 31-12 57-31 80"/></g><text x="256" y="455" text-anchor="middle" font-family="Arial" font-size="52" font-weight="900"><tspan fill="url(#g)">WE</tspan><tspan fill="#fff">PADEL</tspan></text></svg>
