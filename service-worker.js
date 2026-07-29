@@ -1,5 +1,5 @@
-const CACHE='wepadel-v3.0.1-logo10-powered';
-const CORE=['./','index.html','styles.css?v=3.0.1','config.js?v=3.0.1','scoring.js?v=3.0.1','db.js?v=3.0.1','app.js?v=3.0.1','manifest.json','icons/icon-192.png','icons/icon-512.png'];
+const CACHE='padelscore-league-v2.0.2-safari-db-fix';
+const CORE=['./','index.html','styles.css?v=2.0.2','config.js?v=2.0.2','scoring.js?v=2.0.2','db.js?v=2.0.2','app.js?v=2.0.2','manifest.json','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(
   caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())
 ));
