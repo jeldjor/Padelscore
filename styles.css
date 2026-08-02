@@ -244,3 +244,63 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   .compact-playday-form .feature-toggle b{font-size:13px}
   .compact-playday-form .feature-toggle small{font-size:9px}
 }
+
+/* --- v3.5.3 unmistakable RSVP status and logical playday form --- */
+.rsvp-section .luxe-choices .choice{transition:background .16s ease,border-color .16s ease,opacity .16s ease,transform .16s ease}
+.rsvp-section .luxe-choices .choice.selected{border-color:var(--green2);box-shadow:0 0 0 2px rgba(181,232,44,.18);transform:translateY(-1px)}
+.rsvp-section .luxe-choices .choice.no.selected{background:linear-gradient(180deg,#ff665e,#d83b35);border-color:#ff756f;color:#fff;box-shadow:0 0 0 2px rgba(255,85,77,.18)}
+.rsvp-section .luxe-choices:has(.choice.selected) .choice:not(.selected){opacity:.55}
+.rsvp-current{display:flex;align-items:center;justify-content:center;min-height:34px;margin:8px 0 0;border-radius:10px;font-size:13px;font-weight:900}
+.rsvp-current.yes{background:rgba(145,207,16,.14);color:#c8ef68}
+.rsvp-current.no{background:rgba(255,85,77,.13);color:#ff8b85}
+.rsvp-current.open{background:rgba(156,176,170,.08);color:var(--muted)}
+
+.playday-form-modal{width:min(100%,560px);max-height:min(92dvh,760px);padding:14px 16px 10px;overscroll-behavior:contain}
+.playday-form-modal .modal-head{position:sticky;top:-14px;z-index:3;margin:0 -2px 4px;padding:10px 2px 7px;background:#091d18;border-bottom:1px solid rgba(92,123,113,.2)}
+.playday-form-modal .modal-head h2{margin:0;font-size:25px}
+.compact-playday-form{gap:0}
+.compact-playday-form label{margin:6px 0;gap:5px}
+.compact-playday-form label>small{color:var(--muted);font-size:10px}
+.compact-playday-form input,.compact-playday-form select{height:42px;padding:8px 10px}
+.compact-playday-form .playday-top-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.playday-form-section{padding:8px 0;border-top:1px solid rgba(92,123,113,.2)}
+.playday-form-section h3{margin:0 0 4px;color:#aebeb9;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.compact-playday-form .feature-toggle{position:relative;display:grid;grid-template-columns:38px minmax(0,1fr);align-items:center;gap:9px;min-height:40px;margin:1px 0;cursor:pointer}
+.compact-playday-form .feature-toggle input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.compact-playday-form .feature-toggle>i{position:relative;width:38px;height:22px;border-radius:999px;background:#31443e;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);transition:.18s ease}
+.compact-playday-form .feature-toggle>i::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#dce5e2;transition:.18s ease}
+.compact-playday-form .feature-toggle input:checked+i{background:var(--green)}
+.compact-playday-form .feature-toggle input:checked+i::after{left:19px;background:#07110d}
+.compact-playday-form .feature-toggle span{display:grid;gap:1px}
+.compact-playday-form .feature-toggle b{font-size:13px}
+.compact-playday-form .feature-toggle small{font-size:10px}
+.compact-playday-form .time-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:64px;opacity:1;overflow:hidden;transition:max-height .18s ease,opacity .18s ease}
+.compact-playday-form .time-grid.disabled{max-height:0;opacity:0;pointer-events:none}
+.compact-playday-form #locationFields{max-height:64px;opacity:1;overflow:hidden;transition:max-height .18s ease,opacity .18s ease}
+.compact-playday-form #locationFields.disabled{max-height:0;opacity:0;pointer-events:none}
+.compact-playday-form .duration-field{margin-top:4px}
+.compact-playday-form .playday-practical-grid{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:10px}
+.compact-playday-form .form-footer{bottom:-10px;z-index:4;margin-top:0;padding:8px 0 max(2px,env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(7,27,22,.72),#071b16 28%)}
+
+@media(max-width:480px){
+  .playday-form-modal{max-height:calc(100dvh - max(24px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)));padding:10px 14px 8px}
+  .playday-form-modal .modal-head{top:-10px;padding-top:8px}
+  .playday-form-modal .modal-head h2{font-size:23px}
+  .compact-playday-form .playday-top-grid,.compact-playday-form .playday-practical-grid,.compact-playday-form .time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .compact-playday-form label{font-size:11px}
+  .compact-playday-form input,.compact-playday-form select{height:40px;font-size:14px}
+  .playday-form-section{padding:6px 0}
+  .compact-playday-form .feature-toggle{min-height:37px}
+  .compact-playday-form .duration-field{margin-top:2px}
+}
+
+@media(max-height:740px){
+  .playday-form-modal{max-height:96dvh}
+  .playday-form-modal .modal-head{padding-top:5px;padding-bottom:5px}
+  .compact-playday-form label{margin:3px 0}
+  .compact-playday-form input,.compact-playday-form select{height:36px}
+  .playday-form-section{padding:4px 0}
+  .compact-playday-form .feature-toggle{min-height:34px}
+  .compact-playday-form .time-grid,.compact-playday-form #locationFields{max-height:52px}
+  .compact-playday-form .time-grid.disabled,.compact-playday-form #locationFields.disabled{max-height:0}
+}

@@ -1,5 +1,5 @@
-const CACHE='wepadel-v3.5.2-mobile-form-rsvp';
-const CORE=['./','index.html','styles.css?v=3.5.2','config.js?v=3.5.2','scoring.js?v=3.5.2','db.js?v=3.5.2','app.js?v=3.5.2','manifest.json','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png'];
+const CACHE='wepadel-v3.5.3-status-and-playday-form';
+const CORE=['./','index.html','styles.css?v=3.5.3','config.js?v=3.5.3','scoring.js?v=3.5.3','db.js?v=3.5.3','app.js?v=3.5.3','manifest.json','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(
   caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())
 ));

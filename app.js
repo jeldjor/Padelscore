@@ -19,7 +19,7 @@
   const fmtTime = value => value ? String(value).slice(0,5) : '--:--';
   const nowMs = () => Date.now();
 
-  const state = { page:'dashboard', year:new Date().getFullYear(), month:new Date().getMonth(), playdayView:'calendar', playdayFilter:'all', playdayList:true, selectedCalendarDate:null, playdayPage:0, historyPage:0, adminPage:0, selectedPlaydayId:null, pendingRsvp:null, activeMatchId:null, scoreboardMatchId:null, wakeLock:null, timer:null, controlsTimer:null, recognition:null, adminTab:'requests', scoreboardReadOnly:false };
+  const state = { page:'dashboard', year:new Date().getFullYear(), month:new Date().getMonth(), playdayView:'calendar', playdayFilter:'all', playdayList:true, selectedCalendarDate:null, playdayPage:0, historyPage:0, adminPage:0, selectedPlaydayId:null, pendingRsvp:null, rsvpOverrides:{}, activeMatchId:null, scoreboardMatchId:null, wakeLock:null, timer:null, controlsTimer:null, recognition:null, adminTab:'requests', scoreboardReadOnly:false };
 
   function toast(message, error=false){ const el=$('#toast'); el.textContent=message; el.className=`toast show${error?' error':''}`; clearTimeout(el._t); el._t=setTimeout(()=>el.className='toast',2600); }
   function modal(title, body, onOpen){ $('#modalRoot').innerHTML=`<div class="modal-backdrop"><section class="modal-card"><div class="modal-head"><h2>${esc(title)}</h2><button class="close-btn" data-close-modal>✕</button></div>${body}</section></div>`; $$('[data-close-modal]').forEach(b=>b.onclick=closeModal); onOpen?.(); }
@@ -95,6 +95,11 @@
     const me=current();
     if(state.pendingRsvp?.playdayId===playdayId) return state.pendingRsvp.response;
     const mine=DB.listRsvps(playdayId).find(r=>r.user_id===me.id);
+    const override=state.rsvpOverrides[playdayId];
+    if(override){
+      if(mine?.response===override) delete state.rsvpOverrides[playdayId];
+      else return override;
+    }
     return mine?.response||'';
   }
   function playdayStatusText(p, mode='list'){
@@ -212,7 +217,7 @@
     }
     return `<button class="detail-back" data-back-list>‹</button>${uiHeader(esc(fmtDate(pd.date)), '', '')}
       <div class="playday-meta-cards">${playdayTimeText(pd)?`<div class="meta-chip">◷ ${esc(playdayTimeText(pd))}</div>`:''}${pd.location_enabled===false?'':`<div class="meta-chip">⌖ ${esc(playdayLocationText(pd))}</div>`}<div class="meta-chip tikkie-meta">${tikkieMeta(pd)}</div></div>
-      <section class="flat-section"><h2>Jouw status</h2><div class="choice-grid luxe-choices"><button class="choice ${selectedResponse==='playing'?'selected':''}" data-rsvp="playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✓</b><span>Ik speel mee</span></button><button class="choice no ${selectedResponse==='not_playing'?'selected':''}" data-rsvp="not_playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✕</b><span>Ik kan niet</span></button></div></section>
+      <section class="flat-section rsvp-section"><h2>Jouw status</h2><div class="choice-grid luxe-choices"><button class="choice ${selectedResponse==='playing'?'selected':''}" data-rsvp="playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✓</b><span>Ik speel mee</span></button><button class="choice no ${selectedResponse==='not_playing'?'selected':''}" data-rsvp="not_playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✕</b><span>Ik kan niet</span></button></div>${selectedResponse?`<p class="rsvp-current ${selectedResponse==='playing'?'yes':'no'}">${selectedResponse==='playing'?'✓ Je speelt mee':'✕ Je speelt niet mee'}</p>`:'<p class="rsvp-current open">Nog niet gekozen</p>'}</section>
       <section class="flat-section signup-overview"><div class="section-title"><h2>Spelers (${all.length})</h2><span class="host-pill">Host: ${playerNameMarkup(pd.host_id)}</span></div><div class="signup-courts">${courtGroups}</div>${renderReserveList(reserves,users)}</section>
       ${progressTitle?`<section class="flat-section progress-panel"><div class="progress-head"><div class="progress-icon">▣</div><div><strong>${progressTitle}</strong><span>${progressText}</span></div></div><div class="bar-track"><i style="width:${progressWidth}%"></i></div>${paymentAction}</section>`:''}
       ${lobbyBox}${hostPanel}${livePanel}${renderReviewPanel(pd,attendance,reviews,myReview,host)}
@@ -311,15 +316,18 @@
   async function updateRsvp(response){
     const playdayId=state.selectedPlaydayId;
     if(!playdayId||state.pendingRsvp)return;
+    state.rsvpOverrides[playdayId]=response;
     state.pendingRsvp={playdayId,response};
     render();
     try{
-      await DB.setRsvp(playdayId,response);
+      const saved=await DB.setRsvp(playdayId,response);
+      if(saved?.response!==response) throw new Error('Je keuze kon niet worden bevestigd. Probeer opnieuw.');
       state.pendingRsvp=null;
-      toast('Keuze opgeslagen');
+      toast(response==='playing'?'Status bijgewerkt: je speelt mee':'Status bijgewerkt: je speelt niet mee');
       render();
     }catch(e){
       state.pendingRsvp=null;
+      delete state.rsvpOverrides[playdayId];
       toast(e.message||'Je keuze kon niet worden opgeslagen.',true);
       render();
     }
@@ -327,16 +335,18 @@
   function confirmAction(title,text,fn){modal(title,`<p class="muted">${esc(text)}</p><div class="action-row"><button class="btn ghost" data-close-modal>Annuleren</button><button class="btn danger" id="confirmYes">Doorgaan</button></div>`,()=>{$('#confirmYes').onclick=()=>run(fn,'Opgeslagen');});}
 
   function openPlaydayForm(pd,date=todayISO()){
+    pd=pd||DB.listPlaydays().find(item=>item.date===date)||null;
     const players=DB.listUsers().filter(u=>u.active),selected=pd?.host_id||current().id,timeEnabled=pd?.time_enabled!==false,locationEnabled=pd?.location_enabled!==false;
     modal(pd?'Speeldag wijzigen':'Speeldag aanmaken',`<form id="pdForm" class="compact-playday-form">
       <div class="compact-form-grid playday-top-grid"><label>Datum<input name="date" type="date" value="${esc(pd?.date||date)}" required></label><label>Host<select name="host_id" required>${players.map(u=>`<option value="${u.id}" ${u.id===selected?'selected':''}>${esc(u.display_name)}</option>`).join('')}</select></label></div>
-      <section class="optional-form-section"><label class="feature-toggle"><input id="timeEnabled" name="time_enabled" type="checkbox" ${timeEnabled?'checked':''}><span><b>Begin- en eindtijd</b><small>Uitvinken als alleen de duur bekend is</small></span></label><div id="timeFields" class="compact-form-grid three time-duration-grid"><label class="time-only">Begin<input name="start_time" type="time" value="${esc(pd?.start_time||'19:00')}"></label><label class="time-only">Einde<input name="end_time" type="time" value="${esc(pd?.end_time||'21:00')}"></label><label>Duur (minuten)<input name="duration_minutes" type="number" min="1" max="1440" step="1" value="${esc(pd?.duration_minutes||'')}" placeholder="120"></label></div></section>
-      <section class="optional-form-section"><label class="feature-toggle"><input id="locationEnabled" name="location_enabled" type="checkbox" ${locationEnabled?'checked':''}><span><b>Locatie</b><small>Van toepassing op deze speeldag</small></span></label><div id="locationFields"><label>Padelclub<input name="location" value="${esc(pd?.location||'')}" placeholder="Naam padelclub"></label></div></section>
-      <div class="compact-form-grid three playday-core-grid"><label>Banen<input name="court_count" type="number" min="1" max="20" value="${pd?.court_count||1}" required></label><label>Kosten p.p.<input name="cost_per_player" type="number" min="0" step="0.01" value="${pd?.cost_per_player??''}" placeholder="12,50"></label><label>Status<select name="status"><option value="planned" ${pd?.status==='planned'?'selected':''}>Gepland</option><option value="cancelled" ${pd?.status==='cancelled'?'selected':''}>Geannuleerd</option><option value="closed" ${pd?.status==='closed'?'selected':''}>Afgesloten</option></select></label></div>
-      <label>Tikkie-link<input name="tikkie_url" type="url" value="${esc(pd?.tikkie_url||'')}" placeholder="https://tikkie.me/pay/..."></label>
+      <section class="playday-form-section"><h3>Tijd en duur</h3><label class="feature-toggle"><input id="timeEnabled" name="time_enabled" type="checkbox" ${timeEnabled?'checked':''}><i aria-hidden="true"></i><span><b>Begin- en eindtijd gebruiken</b><small>Zet uit wanneer alleen de duur bekend is</small></span></label><div id="timeFields" class="compact-form-grid time-grid"><label class="time-only">Begin<input name="start_time" type="time" value="${esc(pd?.start_time||'19:00')}"></label><label class="time-only">Einde<input name="end_time" type="time" value="${esc(pd?.end_time||'21:00')}"></label></div><label class="duration-field">Duur in minuten <small>Mag ook zonder begin- en eindtijd</small><input name="duration_minutes" type="number" inputmode="numeric" min="1" max="1440" step="1" value="${esc(pd?.duration_minutes||'')}" placeholder="Bijvoorbeeld 90"></label></section>
+      <section class="playday-form-section"><h3>Locatie</h3><label class="feature-toggle"><input id="locationEnabled" name="location_enabled" type="checkbox" ${locationEnabled?'checked':''}><i aria-hidden="true"></i><span><b>Locatie gebruiken</b><small>Zet uit wanneer de locatie niet van toepassing is</small></span></label><div id="locationFields"><label>Padelclub<input name="location" value="${esc(pd?.location||'')}" placeholder="Naam padelclub"></label></div></section>
+      <section class="playday-form-section practical-section"><h3>Praktisch</h3><div class="compact-form-grid playday-practical-grid"><label>Banen<input name="court_count" type="number" inputmode="numeric" min="1" max="20" value="${pd?.court_count||1}" required></label><label>Kosten p.p.<input name="cost_per_player" type="number" inputmode="decimal" min="0" step="0.01" value="${pd?.cost_per_player??''}" placeholder="12,50"></label></div><label>Status<select name="status"><option value="planned" ${pd?.status==='planned'?'selected':''}>Gepland</option><option value="cancelled" ${pd?.status==='cancelled'?'selected':''}>Geannuleerd</option><option value="closed" ${pd?.status==='closed'?'selected':''}>Afgesloten</option></select></label><label>Tikkie-link <small>Optioneel</small><input name="tikkie_url" type="url" value="${esc(pd?.tikkie_url||'')}" placeholder="https://tikkie.me/pay/..."></label></section>
       <div class="form-footer"><button class="btn primary" type="submit">Opslaan</button>${pd?'<button class="btn danger" type="button" id="deletePd">Verwijderen</button>':''}</div>
     </form>`,()=>{
-      const sync=()=>{ $('#timeFields').classList.toggle('time-off',!$('#timeEnabled').checked); $('#locationFields').classList.toggle('disabled',!$('#locationEnabled').checked); }; $('#timeEnabled').onchange=sync;$('#locationEnabled').onchange=sync;sync();
+      $('.modal-card')?.classList.add('playday-form-modal');
+      const sync=()=>{ $('#timeFields').classList.toggle('disabled',!$('#timeEnabled').checked); $('#locationFields').classList.toggle('disabled',!$('#locationEnabled').checked); }; $('#timeEnabled').onchange=sync;$('#locationEnabled').onchange=sync;sync();
+      $('#pdForm [name="date"]').onchange=e=>{const existing=DB.listPlaydays().find(item=>item.date===e.target.value);if(existing&&existing.id!==pd?.id){toast('Bestaande speeldag geopend');openPlaydayForm(existing);}};
       $('#pdForm').onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));run(()=>DB.upsertPlayday({...f,id:pd?.id,court_count:Number(f.court_count),duration_minutes:f.duration_minutes?Number(f.duration_minutes):null,cost_per_player:f.cost_per_player?Number(f.cost_per_player):null,time_enabled:$('#timeEnabled').checked,location_enabled:$('#locationEnabled').checked}),'Speeldag opgeslagen');};
       $('#deletePd')?.addEventListener('click',()=>run(()=>DB.deletePlayday(pd.id),'Speeldag verwijderd'));
     });
@@ -412,6 +422,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.5.2',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-352')){sessionStorage.setItem('wepadel-sw-352','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.5.3',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-353')){sessionStorage.setItem('wepadel-sw-353','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();

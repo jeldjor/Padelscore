@@ -365,9 +365,10 @@
     const row = denormalizePlayday(input);
     const query = input.id
       ? client.from('playdays').update(row).eq('id', input.id).select().single()
-      : client.from('playdays').insert(row).select().single();
-    const { error } = await query;
+      : client.from('playdays').upsert(row, { onConflict: 'play_date' }).select().single();
+    const { data, error } = await query;
     if (error) fail(error);
+    if (!data?.id) throw new Error('De speeldag kon niet worden opgeslagen.');
     return loadAll();
   }
 
@@ -394,8 +395,8 @@
     if (!data || data.user_id !== me.id || data.playday_id !== playdayId || data.response !== response) {
       throw new Error('Je keuze kon niet worden bevestigd. Probeer opnieuw.');
     }
-    // Use the confirmed server row immediately. A realtime refresh that started
-    // just before this write is prevented from restoring the previous choice.
+    // The row returned by Supabase is the confirmed status. Keep it visible
+    // immediately; realtime refreshes may update the rest of the screen later.
     loadSequence += 1;
     cache.rsvps = cache.rsvps.filter(r => !(r.playday_id === playdayId && r.user_id === me.id));
     cache.rsvps.push(data);
@@ -404,18 +405,8 @@
       const del = await client.from('attendance').delete().eq('playday_id', playdayId).eq('user_id', me.id);
       if (del.error) fail(del.error);
     }
-    await loadAll();
-    let saved = cache.rsvps.find(r => r.playday_id === playdayId && r.user_id === me.id);
-    if (saved?.response !== response) {
-      const check = await client.from('rsvps').select('*').eq('playday_id', playdayId).eq('user_id', me.id).maybeSingle();
-      if (check.error) fail(check.error);
-      if (check.data?.response !== response) throw new Error('Je keuze is niet bijgewerkt. Probeer opnieuw.');
-      cache.rsvps = cache.rsvps.filter(r => !(r.playday_id === playdayId && r.user_id === me.id));
-      cache.rsvps.push(check.data);
-      saved = check.data;
-      emit();
-    }
-    return saved;
+    scheduleRefresh();
+    return clone(data);
   }
 
   async function setSlotPaid(slotId, paid) {
