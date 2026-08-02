@@ -152,6 +152,7 @@ html,body{height:100%;overflow:hidden}
   .meta-chip+.meta-chip{border-top:0;border-left:1px solid rgba(111,143,132,.18)}
   .day span,.day.today span{width:26px;height:26px}
 }
+
 @media(max-height:700px){
   .modal-card{padding-top:8px}.modal-head{top:-8px}
   .compact-playday-form label{margin:3px 0}
@@ -218,4 +219,28 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
 .complete-court .payment-cell{margin-left:auto}
 @media(max-width:480px){
   .signup-court{padding:5px 7px}.court-position{font-size:9px}.complete-court .payment-cell{min-width:72px}
+}
+
+/* --- v3.5.2 reliable choices and clean mobile playday form --- */
+.compact-playday-form{display:grid;gap:2px}
+.compact-playday-form .optional-form-section>div{max-height:none;overflow:visible}
+.compact-playday-form .optional-form-section>div.disabled{max-height:0;overflow:hidden}
+.compact-playday-form #timeFields{padding-top:2px}
+.compact-playday-form #locationFields{padding-top:1px}
+.compact-playday-form .time-duration-grid:not(.time-off),
+.compact-playday-form .playday-core-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.compact-playday-form .time-duration-grid.time-off{grid-template-columns:1fr}
+.compact-playday-form .time-duration-grid.time-off label:last-child{grid-column:auto}
+.compact-playday-form .form-footer{margin-top:2px}
+
+@media(max-width:480px){
+  .compact-playday-form .playday-top-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}
+  .compact-playday-form .time-duration-grid:not(.time-off),
+  .compact-playday-form .playday-core-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .compact-playday-form .time-duration-grid:not(.time-off) label:last-child,
+  .compact-playday-form .playday-core-grid label:last-child{grid-column:auto}
+  .compact-playday-form label{font-size:11px}
+  .compact-playday-form input,.compact-playday-form select{min-width:0;padding-left:6px;padding-right:6px;font-size:14px}
+  .compact-playday-form .feature-toggle b{font-size:13px}
+  .compact-playday-form .feature-toggle small{font-size:9px}
 }

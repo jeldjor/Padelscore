@@ -16,6 +16,7 @@
   let session = null;
   let channel = null;
   let refreshTimer = null;
+  let loadSequence = 0;
   const scoreQueues = new Map();
   const cache = {
     competition: null,
@@ -97,6 +98,7 @@
 
   async function loadAll() {
     if (!session?.user?.id) return clearCache();
+    const requestSequence = ++loadSequence;
     const requests = await Promise.all([
       client.from('competition').select('*').limit(1).maybeSingle(),
       client.from('profiles').select('*').order('display_name'),
@@ -109,6 +111,8 @@
     ]);
     const firstError = requests.find(r => r.error)?.error;
     if (firstError) fail(firstError);
+    // A slower, older refresh may never overwrite data returned by a newer one.
+    if (requestSequence !== loadSequence) return current();
     cache.competition = requests[0].data || null;
     cache.users = requests[1].data || [];
     cache.playdays = (requests[2].data || []).map(normalizePlayday);
@@ -125,6 +129,7 @@
   }
 
   function clearCache() {
+    loadSequence += 1;
     cache.competition = null;
     cache.users = [];
     cache.playdays = [];
@@ -384,18 +389,32 @@
       playday_id: playdayId,
       user_id: me.id,
       response
-    }, { onConflict: 'playday_id,user_id' }).select('playday_id,user_id,response').single();
+    }, { onConflict: 'playday_id,user_id' }).select('*').single();
     if (error) fail(error);
     if (!data || data.user_id !== me.id || data.playday_id !== playdayId || data.response !== response) {
       throw new Error('Je keuze kon niet worden bevestigd. Probeer opnieuw.');
     }
+    // Use the confirmed server row immediately. A realtime refresh that started
+    // just before this write is prevented from restoring the previous choice.
+    loadSequence += 1;
+    cache.rsvps = cache.rsvps.filter(r => !(r.playday_id === playdayId && r.user_id === me.id));
+    cache.rsvps.push(data);
+    emit();
     if (response !== 'playing') {
       const del = await client.from('attendance').delete().eq('playday_id', playdayId).eq('user_id', me.id);
       if (del.error) fail(del.error);
     }
     await loadAll();
-    const saved = cache.rsvps.find(r => r.playday_id === playdayId && r.user_id === me.id);
-    if (saved?.response !== response) throw new Error('Je keuze is niet bijgewerkt. Probeer opnieuw.');
+    let saved = cache.rsvps.find(r => r.playday_id === playdayId && r.user_id === me.id);
+    if (saved?.response !== response) {
+      const check = await client.from('rsvps').select('*').eq('playday_id', playdayId).eq('user_id', me.id).maybeSingle();
+      if (check.error) fail(check.error);
+      if (check.data?.response !== response) throw new Error('Je keuze is niet bijgewerkt. Probeer opnieuw.');
+      cache.rsvps = cache.rsvps.filter(r => !(r.playday_id === playdayId && r.user_id === me.id));
+      cache.rsvps.push(check.data);
+      saved = check.data;
+      emit();
+    }
     return saved;
   }
 

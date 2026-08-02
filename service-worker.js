@@ -1,5 +1,5 @@
-const CACHE='wepadel-v3.5.1-complete-court-payments';
-const CORE=['./','index.html','styles.css?v=3.5.1','config.js?v=3.5.1','scoring.js?v=3.5.1','db.js?v=3.5.1','app.js?v=3.5.1','manifest.json','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png'];
+const CACHE='wepadel-v3.5.2-mobile-form-rsvp';
+const CORE=['./','index.html','styles.css?v=3.5.2','config.js?v=3.5.2','scoring.js?v=3.5.2','db.js?v=3.5.2','app.js?v=3.5.2','manifest.json','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(
   caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())
 ));

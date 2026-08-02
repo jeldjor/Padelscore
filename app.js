@@ -195,7 +195,7 @@
     if(mineSlot){
       const filled=mineCourtSlots.filter(s=>s.user_id).length,missing=4-filled;
       progressTitle=mineCourtComplete?`Baan ${mineSlot.court_number} compleet`:`Nog ${missing} speler${missing===1?'':'s'} nodig op baan ${mineSlot.court_number}`;
-      progressText=mineCourtComplete?(mineSlot.paid?'Jouw plek staat als betaald.':'Jouw baan is compleet; de betaling kan nu worden geregeld.'):`Je plek staat vast. Zodra de baan compleet is verschijnt de Tikkie-link.`;
+      progressText=mineCourtComplete?(mineSlot.paid?'Jouw plek staat als betaald.':'Jouw baan is compleet; de betaling kan nu worden geregeld.'):'Je plek staat vast.';
       progressWidth=Math.min(100,(filled/4)*100);
       if(mineCourtComplete&&mineSlot.paid){
         paymentAction=`<p class="paid-confirm">✓ Betaald${mineSlot.payment_inherited_from?` · overgenomen van ${esc(nameOf(mineSlot.payment_inherited_from))}`:''}</p>`;
@@ -203,8 +203,6 @@
         paymentAction=`<a class="btn primary full pay-btn" href="${esc(pd.tikkie_url)}" target="_blank" rel="noopener"><span class="tikkie-mark">€</span> Open Tikkie</a>`;
       }else if(mineCourtComplete){
         paymentAction='<p class="muted">De Tikkie-link is nog niet ingesteld.</p>';
-      }else{
-        paymentAction='<p class="muted">Tikkie wordt zichtbaar zodra jouw baan compleet is.</p>';
       }
     }else if(mineReserveIndex>=0){
       progressTitle=`Je staat reserve · plek ${mineReserveIndex+1}`;
@@ -331,10 +329,10 @@
   function openPlaydayForm(pd,date=todayISO()){
     const players=DB.listUsers().filter(u=>u.active),selected=pd?.host_id||current().id,timeEnabled=pd?.time_enabled!==false,locationEnabled=pd?.location_enabled!==false;
     modal(pd?'Speeldag wijzigen':'Speeldag aanmaken',`<form id="pdForm" class="compact-playday-form">
-      <div class="compact-form-grid"><label>Datum<input name="date" type="date" value="${esc(pd?.date||date)}" required></label><label>Host<select name="host_id" required>${players.map(u=>`<option value="${u.id}" ${u.id===selected?'selected':''}>${esc(u.display_name)}</option>`).join('')}</select></label></div>
+      <div class="compact-form-grid playday-top-grid"><label>Datum<input name="date" type="date" value="${esc(pd?.date||date)}" required></label><label>Host<select name="host_id" required>${players.map(u=>`<option value="${u.id}" ${u.id===selected?'selected':''}>${esc(u.display_name)}</option>`).join('')}</select></label></div>
       <section class="optional-form-section"><label class="feature-toggle"><input id="timeEnabled" name="time_enabled" type="checkbox" ${timeEnabled?'checked':''}><span><b>Begin- en eindtijd</b><small>Uitvinken als alleen de duur bekend is</small></span></label><div id="timeFields" class="compact-form-grid three time-duration-grid"><label class="time-only">Begin<input name="start_time" type="time" value="${esc(pd?.start_time||'19:00')}"></label><label class="time-only">Einde<input name="end_time" type="time" value="${esc(pd?.end_time||'21:00')}"></label><label>Duur (minuten)<input name="duration_minutes" type="number" min="1" max="1440" step="1" value="${esc(pd?.duration_minutes||'')}" placeholder="120"></label></div></section>
       <section class="optional-form-section"><label class="feature-toggle"><input id="locationEnabled" name="location_enabled" type="checkbox" ${locationEnabled?'checked':''}><span><b>Locatie</b><small>Van toepassing op deze speeldag</small></span></label><div id="locationFields"><label>Padelclub<input name="location" value="${esc(pd?.location||'')}" placeholder="Naam padelclub"></label></div></section>
-      <div class="compact-form-grid three"><label>Banen<input name="court_count" type="number" min="1" max="20" value="${pd?.court_count||1}" required></label><label>Kosten p.p.<input name="cost_per_player" type="number" min="0" step="0.01" value="${pd?.cost_per_player??''}" placeholder="12,50"></label><label>Status<select name="status"><option value="planned" ${pd?.status==='planned'?'selected':''}>Gepland</option><option value="cancelled" ${pd?.status==='cancelled'?'selected':''}>Geannuleerd</option><option value="closed" ${pd?.status==='closed'?'selected':''}>Afgesloten</option></select></label></div>
+      <div class="compact-form-grid three playday-core-grid"><label>Banen<input name="court_count" type="number" min="1" max="20" value="${pd?.court_count||1}" required></label><label>Kosten p.p.<input name="cost_per_player" type="number" min="0" step="0.01" value="${pd?.cost_per_player??''}" placeholder="12,50"></label><label>Status<select name="status"><option value="planned" ${pd?.status==='planned'?'selected':''}>Gepland</option><option value="cancelled" ${pd?.status==='cancelled'?'selected':''}>Geannuleerd</option><option value="closed" ${pd?.status==='closed'?'selected':''}>Afgesloten</option></select></label></div>
       <label>Tikkie-link<input name="tikkie_url" type="url" value="${esc(pd?.tikkie_url||'')}" placeholder="https://tikkie.me/pay/..."></label>
       <div class="form-footer"><button class="btn primary" type="submit">Opslaan</button>${pd?'<button class="btn danger" type="button" id="deletePd">Verwijderen</button>':''}</div>
     </form>`,()=>{
@@ -414,6 +412,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.5.1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-351')){sessionStorage.setItem('wepadel-sw-351','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.5.2',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-352')){sessionStorage.setItem('wepadel-sw-352','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();
