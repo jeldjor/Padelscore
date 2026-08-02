@@ -10,7 +10,7 @@
   <title>WEPADEL</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=3.2.0">
+  <link rel="stylesheet" href="styles.css?v=3.3.0">
 </head>
 <body>
   <div id="toast" class="toast" aria-live="polite"></div>
@@ -18,7 +18,7 @@
   <section id="loginScreen" class="screen login-screen">
     <div class="court-lines"></div>
     <div class="splash-brand">
-      <img src="logo-wepadel.png" class="wepadel-logo" alt="WEPADEL">
+      <img src="logo-wepadel-transparent.png" class="wepadel-logo" alt="WEPADEL">
     </div>
     <div class="login-content" id="loginPanel">
       <h2>Welkom bij WEPADEL</h2>
@@ -46,13 +46,17 @@
       </form>
       <button class="text-button" id="showLogin" type="button">Terug naar inloggen</button>
     </div>
-    <div class="powered"><span>POWERED BY</span><img src="logo-gjmotion.png" alt="GJ MOTION"></div>
+    <div class="powered"><span>POWERED BY</span><img src="logo-gjmotion-white.png" alt="GJ MOTION"></div>
+  </section>
+
+  <section id="postLoginSplash" class="post-login-splash hidden" aria-hidden="true">
+    <img src="logo-gjmotion-white.png" alt="GJ MOTION">
   </section>
 
   <div id="appShell" class="app-shell hidden">
     <header class="topbar">
       <button id="backButton" class="icon-btn hidden" aria-label="Terug">‹</button>
-      <div class="brand compact"><img src="logo-wepadel.png" alt="WEPADEL"></div>
+      <div class="brand compact"><img src="logo-wepadel-transparent.png" alt="WEPADEL"></div>
     </header>
     <main id="mainContent" class="main-content"></main>
     <nav id="bottomNav" class="bottom-nav">
@@ -99,9 +103,9 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=3.2.0"></script>
-  <script src="scoring.js?v=3.2.0"></script>
-  <script src="db.js?v=3.2.0"></script>
-  <script src="app.js?v=3.2.0"></script>
+  <script src="config.js?v=3.3.0"></script>
+  <script src="scoring.js?v=3.3.0"></script>
+  <script src="db.js?v=3.3.0"></script>
+  <script src="app.js?v=3.3.0"></script>
 </body>
 </html>

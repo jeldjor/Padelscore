@@ -317,10 +317,18 @@
     return loadAll();
   }
 
+  async function blockUser(id, active) {
+    requireAdmin();
+    await callFunction(cfg.adminFunctionName || 'admin-users', {
+      action: 'block', user_id: id, active: Boolean(active)
+    });
+    return loadAll();
+  }
+
   async function deleteUser(id) {
     requireAdmin();
     await callFunction(cfg.adminFunctionName || 'admin-users', {
-      action: 'block', user_id: id, active: false
+      action: 'delete', user_id: id
     });
     return loadAll();
   }
@@ -545,7 +553,7 @@
 
   window.PadelDB = {
     mode: 'online', client, init, login, register, logout, current, isAdmin, canHost,
-    listUsers, createUser, approveUser, rejectUser, updateUser, updateRegistrationCode, changePassword, adminResetPassword, deleteUser,
+    listUsers, createUser, approveUser, rejectUser, updateUser, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
     listPlaydays, getPlayday, upsertPlayday, deletePlayday,
     setRsvp, listRsvps, enterLobby, setReady, listAttendance, setAttendance,
     listMatches, createMatch, updateMatchScore, finishMatch, deleteMatch,

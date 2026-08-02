@@ -155,6 +155,11 @@ Deno.serve(async (req) => {
   const profile = profiles?.[0];
   if (!profileRes.ok || !profile) return json({ error: 'Speler niet gevonden.' }, 404);
   if (profile.role === 'admin') return json({ error: 'Het beheerdersaccount kan hier niet worden aangepast.' }, 400);
+  const adminProfileRes = await fetch(`${url}/rest/v1/profiles?id=eq.${me.id}&select=competition_id&limit=1`, { headers: adminHeaders });
+  const adminProfiles = await adminProfileRes.json().catch(() => []);
+  if (!adminProfileRes.ok || !adminProfiles?.[0]?.competition_id || adminProfiles[0].competition_id !== profile.competition_id) {
+    return json({ error: 'Geen toegang tot deze speler.' }, 403);
+  }
 
   const authRes = await fetch(`${url}/auth/v1/admin/users/${userId}`, { headers: adminHeaders });
   const authUser = await authRes.json().catch(() => null);
@@ -219,6 +224,32 @@ Deno.serve(async (req) => {
     });
     if (!res.ok) return json({ error: 'Toegang bijwerken is mislukt.' }, res.status);
     await fetch(`${url}/rest/v1/profiles?id=eq.${userId}`, { method: 'PATCH', headers: adminHeaders, body: JSON.stringify({ active, deleted_at: active ? null : new Date().toISOString() }) });
+    return json({ ok: true });
+  }
+
+  if (body.action === 'delete') {
+    if (userId === me.id) return json({ error: 'Je kunt je eigen beheerdersaccount niet verwijderen.' }, 400);
+    const matchFilter = encodeURIComponent(`(blue_player_1.eq.${userId},blue_player_2.eq.${userId},red_player_1.eq.${userId},red_player_2.eq.${userId})`);
+    const [hostRes, matchRes] = await Promise.all([
+      fetch(`${url}/rest/v1/playdays?host_id=eq.${userId}&select=id&limit=1`, { headers: adminHeaders }),
+      fetch(`${url}/rest/v1/matches?or=${matchFilter}&select=id&limit=1`, { headers: adminHeaders }),
+    ]);
+    const [hostRows, matchRows] = await Promise.all([
+      hostRes.json().catch(() => []),
+      matchRes.json().catch(() => []),
+    ]);
+    if (!hostRes.ok || !matchRes.ok) return json({ error: 'Accountgebruik controleren is mislukt.' }, 500);
+    if (hostRows.length || matchRows.length) {
+      return json({ error: 'Dit account heeft speeldagen of wedstrijdhistorie. Blokkeer het account om de uitslagen te behouden.' }, 409);
+    }
+
+    const cleanup = await Promise.all(['rsvps', 'attendance', 'session_reviews'].map((table) =>
+      fetch(`${url}/rest/v1/${table}?user_id=eq.${userId}`, { method: 'DELETE', headers: adminHeaders })
+    ));
+    if (cleanup.some((response) => !response.ok)) return json({ error: 'Gekoppelde aanmeldingen verwijderen is mislukt.' }, 500);
+
+    const remove = await fetch(`${url}/auth/v1/admin/users/${userId}`, { method: 'DELETE', headers: adminHeaders });
+    if (!remove.ok) return json({ error: 'Account verwijderen is mislukt.' }, remove.status);
     return json({ ok: true });
   }
 
