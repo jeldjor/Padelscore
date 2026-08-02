@@ -280,18 +280,33 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
 .compact-playday-form #locationFields.disabled{max-height:0;opacity:0;pointer-events:none}
 .compact-playday-form .duration-field{margin-top:4px}
 .compact-playday-form .playday-practical-grid{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:10px}
+.compact-playday-form .playday-settings-grid{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:10px}
 .compact-playday-form .form-footer{bottom:-10px;z-index:4;margin-top:0;padding:8px 0 max(2px,env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(7,27,22,.72),#071b16 28%)}
 
 @media(max-width:480px){
   .playday-form-modal{max-height:calc(100dvh - max(24px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)));padding:10px 14px 8px}
   .playday-form-modal .modal-head{top:-10px;padding-top:8px}
   .playday-form-modal .modal-head h2{font-size:23px}
-  .compact-playday-form .playday-top-grid,.compact-playday-form .playday-practical-grid,.compact-playday-form .time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .compact-playday-form .playday-top-grid,.compact-playday-form .playday-practical-grid,.compact-playday-form .playday-settings-grid,.compact-playday-form .time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .compact-playday-form label{font-size:11px}
   .compact-playday-form input,.compact-playday-form select{height:40px;font-size:14px}
   .playday-form-section{padding:6px 0}
   .compact-playday-form .feature-toggle{min-height:37px}
   .compact-playday-form .duration-field{margin-top:2px}
+}
+
+/* --- v3.5.4 uncached live status and compact controls --- */
+.rsvp-section .luxe-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.rsvp-section .luxe-choices .choice{height:44px;min-height:44px;padding:0 9px;border-radius:12px;font-size:13px}
+.rsvp-section .luxe-choices .choice-mark{font-size:16px}
+.rsvp-section .rsvp-current{min-height:30px;margin-top:6px;font-size:12px}
+
+.player-admin-row .admin-item-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;width:min(100%,340px)}
+.player-admin-row .admin-item-actions .btn.small{width:100%;min-width:0;height:32px;padding:0 4px;border-radius:9px;font-size:10px}
+
+@media(max-width:700px){
+  .player-admin-row{grid-template-columns:minmax(0,1fr);gap:5px;padding:8px 0}
+  .player-admin-row .admin-item-actions{grid-column:1;width:100%}
 }
 
 @media(max-height:740px){
