@@ -159,3 +159,26 @@ html,body{height:100%;overflow:hidden}
   .optional-form-section{padding:4px 0}
   .avatar-picker{gap:2px}
 }
+
+/* --- v3.4.1 fixed login binding and non-scrolling mobile login --- */
+html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
+.login-screen{position:fixed;inset:0;width:100%;height:100dvh;min-height:0;overflow:hidden;overscroll-behavior:none;grid-template-rows:minmax(76px,.75fr) auto minmax(56px,.45fr);align-content:stretch;gap:clamp(4px,1.2vh,12px);padding:max(10px,env(safe-area-inset-top)) 20px max(8px,env(safe-area-inset-bottom))}
+.login-screen .splash-brand{align-self:end;min-height:0}
+.login-screen .wepadel-logo{width:clamp(92px,17vh,138px);height:clamp(86px,16vh,128px)}
+#loginPanel{align-self:center;max-height:100%;overflow:hidden}
+#loginPanel h2{font-size:clamp(22px,3.5vh,28px);margin:0 0 clamp(3px,.8vh,8px)}
+#loginPanel>p{font-size:clamp(11px,1.8vh,13px);line-height:1.35;margin:0 auto clamp(5px,1.2vh,12px)}
+#loginPanel label{gap:clamp(3px,.7vh,6px);margin:clamp(4px,.8vh,8px) 0;font-size:clamp(11px,1.7vh,13px)}
+#loginPanel input{height:clamp(38px,5.8vh,46px);padding:8px 12px}
+#loginPanel .btn{height:clamp(40px,5.8vh,46px);margin-top:clamp(6px,1vh,10px);padding:8px 14px}
+#loginPanel .text-button{margin-top:clamp(2px,.6vh,6px);padding:6px 10px}
+.login-screen .powered{align-self:start;gap:2px}
+.login-screen .powered span{font-size:9px;line-height:1.1}
+.login-screen .powered img{width:clamp(118px,38vw,150px);height:clamp(40px,7vh,54px)}
+#registerPanel{align-self:stretch;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+@media(max-height:700px){
+  .login-screen{grid-template-rows:minmax(66px,.6fr) auto minmax(46px,.35fr);gap:3px;padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(4px,env(safe-area-inset-bottom))}
+  .login-screen .wepadel-logo{width:92px;height:84px}
+  #loginPanel>p{max-width:330px}
+  .login-screen .powered img{height:40px}
+}

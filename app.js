@@ -30,7 +30,7 @@
   function avatarMarkup(userOrId,variant='inline'){ const n=avatarNumber(userOrId),col=(n-1)%10,row=Math.floor((n-1)/10),x=(col/9*100).toFixed(4),y=(row/4*100).toFixed(4); return `<span class="avatar-sprite ${variant}" aria-hidden="true" style="background-position:${x}% ${y}%"></span>`; }
   function playerNameMarkup(id){ return `<span class="avatar-name">${avatarMarkup(id)}${esc(nameOf(id))}</span>`; }
   function avatarPicker(value=1,name='avatar_id',label='Kies je avatar'){ const selected=Math.max(1,Math.min(50,Number(value)||1)); return `<fieldset class="avatar-fieldset"><legend>${esc(label)}</legend><input type="hidden" name="${esc(name)}" value="${selected}"><div class="avatar-picker">${Array.from({length:50},(_,i)=>{const n=i+1;return `<button type="button" class="avatar-option ${n===selected?'selected':''}" data-avatar-choice="${n}" aria-label="Avatar ${n}, ${n<=25?'held':'schurk'}">${avatarMarkup({avatar_id:n},'picker')}</button>`;}).join('')}</div></fieldset>`; }
-  function bindAvatarPickers(root=document){ $('[data-avatar-choice]',root).forEach(button=>button.onclick=()=>{const field=button.closest('.avatar-fieldset');if(!field)return;field.querySelector('input[type="hidden"]').value=button.dataset.avatarChoice;$('[data-avatar-choice]',field).forEach(x=>x.classList.toggle('selected',x===button));}); }
+  function bindAvatarPickers(root=document){ $$('[data-avatar-choice]',root).forEach(button=>button.onclick=()=>{const field=button.closest('.avatar-fieldset');if(!field)return;field.querySelector('input[type="hidden"]').value=button.dataset.avatarChoice;$$('[data-avatar-choice]',field).forEach(x=>x.classList.toggle('selected',x===button));}); }
   function playdayTimeText(p){ return p?.time_enabled===false?'':`${fmtTime(p?.start_time)} - ${fmtTime(p?.end_time)}`; }
   function playdayLocationText(p){ return p?.location_enabled===false?'':String(p?.location||'Locatie volgt'); }
   function current(){ return DB.current(); }
@@ -339,6 +339,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.4.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-340')){sessionStorage.setItem('wepadel-sw-340','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.4.1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-341')){sessionStorage.setItem('wepadel-sw-341','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();

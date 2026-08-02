@@ -5,5 +5,5 @@ window.PADEL_CONFIG = {
   loginFunctionName: 'username-login',
   registerFunctionName: 'self-register',
   competitionName: 'WEPADEL',
-  appVersion: '3.2.0'
+  appVersion: '3.4.1'
 };
