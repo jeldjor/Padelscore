@@ -205,3 +205,17 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
 @media(max-width:480px){
   .signup-player-row{gap:5px}.signup-player-row .avatar-name{font-size:12px}.payment-cell{min-width:75px}.payment-toggle,.payment-state{font-size:8px;padding:4px 6px}.payment-cell small{max-width:86px}.time-duration-grid:not(.time-off){grid-template-columns:repeat(2,minmax(0,1fr))}.time-duration-grid:not(.time-off) label:last-child{grid-column:1/-1}.tikkie-meta{gap:5px}.tikkie-mark{width:19px;height:19px}
 }
+
+/* --- v3.5.1 instant RSVP feedback and complete-court payments --- */
+.toast{top:max(14px,calc(env(safe-area-inset-top) + 10px));width:min(calc(100% - 24px),420px);text-align:center;box-shadow:0 10px 28px rgba(0,0,0,.42)}
+.choice:disabled{cursor:wait;opacity:.82}
+.signup-courts{gap:10px}
+.signup-court{border-top:0;padding:6px 10px}
+.signup-court.incomplete-court{border-bottom:1px solid rgba(94,124,114,.22)}
+.signup-court.complete-court{border:2px solid var(--green);border-radius:12px;background:linear-gradient(135deg,rgba(145,207,16,.16),rgba(9,36,28,.84));box-shadow:0 0 0 1px rgba(181,232,44,.08),0 8px 24px rgba(0,0,0,.18)}
+.signup-court.complete-court .signup-player-row{border-bottom-color:rgba(181,232,44,.2)}
+.court-position{margin-left:auto;color:var(--muted);font-size:10px;font-weight:850;white-space:nowrap}
+.complete-court .payment-cell{margin-left:auto}
+@media(max-width:480px){
+  .signup-court{padding:5px 7px}.court-position{font-size:9px}.complete-court .payment-cell{min-width:72px}
+}

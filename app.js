@@ -19,7 +19,7 @@
   const fmtTime = value => value ? String(value).slice(0,5) : '--:--';
   const nowMs = () => Date.now();
 
-  const state = { page:'dashboard', year:new Date().getFullYear(), month:new Date().getMonth(), playdayView:'calendar', playdayFilter:'all', playdayList:true, selectedCalendarDate:null, playdayPage:0, historyPage:0, adminPage:0, selectedPlaydayId:null, activeMatchId:null, scoreboardMatchId:null, wakeLock:null, timer:null, controlsTimer:null, recognition:null, adminTab:'requests', scoreboardReadOnly:false };
+  const state = { page:'dashboard', year:new Date().getFullYear(), month:new Date().getMonth(), playdayView:'calendar', playdayFilter:'all', playdayList:true, selectedCalendarDate:null, playdayPage:0, historyPage:0, adminPage:0, selectedPlaydayId:null, pendingRsvp:null, activeMatchId:null, scoreboardMatchId:null, wakeLock:null, timer:null, controlsTimer:null, recognition:null, adminTab:'requests', scoreboardReadOnly:false };
 
   function toast(message, error=false){ const el=$('#toast'); el.textContent=message; el.className=`toast show${error?' error':''}`; clearTimeout(el._t); el._t=setTimeout(()=>el.className='toast',2600); }
   function modal(title, body, onOpen){ $('#modalRoot').innerHTML=`<div class="modal-backdrop"><section class="modal-card"><div class="modal-head"><h2>${esc(title)}</h2><button class="close-btn" data-close-modal>✕</button></div>${body}</section></div>`; $$('[data-close-modal]').forEach(b=>b.onclick=closeModal); onOpen?.(); }
@@ -91,7 +91,12 @@
   function pager(meta,pageKey){ if(meta.pages<=1)return''; return `<nav class="pager" aria-label="Pagina's"><button data-page-step="-1" data-page-key="${pageKey}" ${meta.page===0?'disabled':''}>‹ Vorige</button><span>${meta.page+1} / ${meta.pages}</span><button data-page-step="1" data-page-key="${pageKey}" ${meta.page===meta.pages-1?'disabled':''}>Volgende ›</button></nav>`; }
   function dashboardLimit(){ return window.innerHeight>=800?3:window.innerHeight>=700?2:1; }
   function fmtDayBadge(date){ const d=new Date(date+'T12:00:00'); const wk=new Intl.DateTimeFormat('nl-NL',{weekday:'short'}).format(d); const mo=new Intl.DateTimeFormat('nl-NL',{month:'short'}).format(d); return `<span class="date-box"><b>${esc(wk).slice(0,2).toUpperCase()}</b><strong>${d.getDate()}</strong><small>${esc(mo).toLowerCase()}</small></span>`; }
-  function rsvpStatus(playdayId){ const me=current(); const mine=DB.listRsvps(playdayId).find(r=>r.user_id===me.id); return mine?.response||''; }
+  function rsvpStatus(playdayId){
+    const me=current();
+    if(state.pendingRsvp?.playdayId===playdayId) return state.pendingRsvp.response;
+    const mine=DB.listRsvps(playdayId).find(r=>r.user_id===me.id);
+    return mine?.response||'';
+  }
   function playdayStatusText(p, mode='list'){
     const assigned=playdaySlots(p.id).filter(s=>s.user_id).length,reserves=reserveRsvps(p.id),mine=rsvpStatus(p.id),mineReserve=reserves.findIndex(r=>r.user_id===current().id),cap=Math.max(4,p.court_count*4),free=Math.max(0,cap-assigned);
     if(mode==='calendar') return `${assigned}/${cap} spelers${reserves.length?` · ${reserves.length} reserve${reserves.length===1?'':'s'}`:''}`;
@@ -144,16 +149,20 @@
     for(let i=offset+days;i<total;i++){ cells+=`<button class="day other" disabled><span>${i-(offset+days)+1}</span></button>`; }
     return `<section class="month single luxe-month"><div class="weekdays"><span>MA</span><span>DI</span><span>WO</span><span>DO</span><span>VR</span><span>ZA</span><span>ZO</span></div><div class="days">${cells}</div><div class="calendar-status-legend"><span><i class="open"></i>Open</span><span><i class="yes"></i>Ik speel mee</span><span><i class="no">×</i>Ik kan niet</span></div></section>`;
   }
-  function slotPaymentMarkup(slot,host){
+  function slotPaymentMarkup(slot,editable){
     const inherited=slot.paid&&slot.payment_inherited_from?`<small>overgenomen van ${esc(nameOf(slot.payment_inherited_from))}</small>`:'';
-    const status=host?`<button class="payment-toggle ${slot.paid?'paid':'unpaid'}" data-slot-paid="${slot.id}" data-paid="${slot.paid?'false':'true'}">${slot.paid?'✓ Betaald':'Niet betaald'}</button>`:`<span class="payment-state ${slot.paid?'paid':'unpaid'}">${slot.paid?'✓ Betaald':'Niet betaald'}</span>`;
+    const status=editable?`<button class="payment-toggle ${slot.paid?'paid':'unpaid'}" data-slot-paid="${slot.id}" data-paid="${slot.paid?'false':'true'}">${slot.paid?'✓ Betaald':'Niet betaald'}</button>`:`<span class="payment-state ${slot.paid?'paid':'unpaid'}">${slot.paid?'✓ Betaald':'Niet betaald'}</span>`;
     return `<span class="payment-cell">${status}${inherited}</span>`;
   }
-  function renderSignupCourt(pd,courtNumber,slots,users,host){
-    const courtSlots=slots.filter(s=>s.court_number===courtNumber), occupied=courtSlots.filter(s=>s.user_id), missing=4-occupied.length;
-    const rows=occupied.map(slot=>{const user=users.get(slot.user_id);return `<div class="signup-player-row"><strong class="avatar-name">${esc(user?.display_name||'Onbekend')}${avatarMarkup(user)}</strong>${slot.user_id===pd.host_id?'<span class="mini-pill">Host</span>':''}${slotPaymentMarkup(slot,host)}</div>`;});
-    courtSlots.filter(s=>!s.user_id&&s.paid).forEach(slot=>rows.push(`<div class="signup-player-row empty-paid"><strong>Open plek</strong><span class="mini-pill">Betaald bewaard</span>${host?slotPaymentMarkup(slot,host):''}</div>`));
-    return `<section class="signup-court"><header><h3>Baan ${courtNumber}</h3><span class="${missing?'incomplete':'complete'}">${missing?`${missing} plek${missing===1?'':'ken'} vrij`:'Compleet'}</span></header><div>${rows.join('')||'<div class="empty-state compact-empty">Nog geen spelers op deze baan.</div>'}</div></section>`;
+  function renderSignupCourt(pd,courtNumber,slots,users,admin){
+    const courtSlots=slots.filter(s=>s.court_number===courtNumber), occupied=courtSlots.filter(s=>s.user_id), complete=occupied.length===4;
+    const rows=occupied.map((slot,index)=>{
+      const user=users.get(slot.user_id);
+      const trailing=complete?slotPaymentMarkup(slot,admin):`<span class="court-position">Baan ${courtNumber} · ${index+1}/4</span>`;
+      return `<div class="signup-player-row"><strong class="avatar-name">${esc(user?.display_name||'Onbekend')}${avatarMarkup(user)}</strong>${slot.user_id===pd.host_id?'<span class="mini-pill">Host</span>':''}${trailing}</div>`;
+    });
+    courtSlots.filter(s=>!s.user_id&&s.paid).forEach(slot=>rows.push(`<div class="signup-player-row empty-paid"><strong>Open plek</strong><span class="mini-pill">Betaald bewaard</span>${admin?slotPaymentMarkup(slot,true):''}</div>`));
+    return `<section class="signup-court ${complete?'complete-court':'incomplete-court'}" aria-label="Baan ${courtNumber}${complete?', compleet':''}"><div>${rows.join('')||'<div class="empty-state compact-empty">Nog geen spelers op deze baan.</div>'}</div></section>`;
   }
   function renderReserveList(reserves,users){
     if(!reserves.length)return'';
@@ -173,7 +182,7 @@
     }
     const pd=selectedPlayday(); if(!pd){state.playdayList=true;return renderPlayday();}
     state.selectedPlaydayId=pd.id;
-    const me=current(), users=userMap(), rv=DB.listRsvps(pd.id).find(r=>r.user_id===me.id), at=DB.listAttendance(pd.id).find(a=>a.user_id===me.id), host=canHost(pd), all=DB.listRsvps(pd.id).filter(r=>r.response==='playing');
+    const me=current(), users=userMap(), selectedResponse=rsvpStatus(pd.id), at=DB.listAttendance(pd.id).find(a=>a.user_id===me.id), host=canHost(pd), admin=isAdmin(), all=DB.listRsvps(pd.id).filter(r=>r.response==='playing');
     const slots=playdaySlots(pd.id), reserves=reserveRsvps(pd.id), mineSlot=slots.find(s=>s.user_id===me.id), mineReserveIndex=reserves.findIndex(r=>r.user_id===me.id);
     const dayMatches=DB.listMatches(pd.id).filter(m=>!m.deleted_at), active=dayMatches.filter(m=>m.status==='active'), reviews=DB.listReviews(pd.id), myReview=reviews.find(r=>r.user_id===me.id), attendance=participants(pd.id);
     const nextCourtNeed=Math.max(0,4-reserves.length), lobbyAllowed=host||Boolean(mineSlot)||at;
@@ -181,8 +190,8 @@
     const lobbyBox=lobbyAllowed?`<section class="flat-section"><div class="section-title"><div><h2>Lobby</h2><p class="muted">Eén keer READY voor de hele speeldag.</p></div>${at?`<span class="badge ${at.status==='ready'?'green':'yellow'}">${esc(statusLabel(at.status))}</span>`:''}</div>${!at?'<button class="btn primary full" data-enter-lobby>Lobby binnengaan</button>':at.status==='present'?'<button class="btn primary full" data-ready>Ik ben READY</button>':`<p class="muted">Je blijft ${esc(statusLabel(at.status))} tot de host je status verandert.</p>`}<div class="open-rows">${attendance.map(x=>`<div class="open-row"><span class="status-dot ${statusClass(x.status)}"></span><strong class="avatar-name">${esc(x.user.display_name)}${avatarMarkup(x.user)}</strong><small>${esc(statusLabel(x.status))}</small></div>`).join('')||'<div class="empty-state">Nog niemand in de lobby.</div>'}</div></section>`:'';
     const hostPanel=host&&!['review','host_review','approved'].includes(pd.session_status)?`<section class="flat-section"><div class="section-title"><div><h2>Banen beheren</h2><p class="muted">${pd.court_count} ${pd.court_count===1?'baan':'banen'} beschikbaar</p></div><button class="btn primary small" data-new-match>+ Wedstrijd</button></div><div class="grid two">${Array.from({length:pd.court_count},(_,i)=>renderCourt(pd,i+1,active.find(m=>m.court_number===i+1),users)).join('')}</div>${dayMatches.length&&!active.length?'<button class="btn danger full session-end" data-end-session>Speeldag afsluiten</button>':''}</section>`:'';
     const livePanel=!host&&active.length?`<section class="flat-section"><div class="section-title"><h2>Live op de banen</h2><span class="badge green">Live</span></div><div class="grid two">${active.map(renderSpectatorCourt).join('')}</div></section>`:'';
-    const courtGroups=Array.from({length:pd.court_count},(_,i)=>renderSignupCourt(pd,i+1,slots,users,host)).join('');
-    let progressTitle='Kies of je meespeelt',progressText='Daarna zie je direct of je op een baan of op de reservelijst staat.',progressWidth=0,paymentAction='';
+    const courtGroups=Array.from({length:pd.court_count},(_,i)=>renderSignupCourt(pd,i+1,slots,users,admin)).join('');
+    let progressTitle='',progressText='',progressWidth=0,paymentAction='';
     if(mineSlot){
       const filled=mineCourtSlots.filter(s=>s.user_id).length,missing=4-filled;
       progressTitle=mineCourtComplete?`Baan ${mineSlot.court_number} compleet`:`Nog ${missing} speler${missing===1?'':'s'} nodig op baan ${mineSlot.court_number}`;
@@ -205,9 +214,9 @@
     }
     return `<button class="detail-back" data-back-list>‹</button>${uiHeader(esc(fmtDate(pd.date)), '', '')}
       <div class="playday-meta-cards">${playdayTimeText(pd)?`<div class="meta-chip">◷ ${esc(playdayTimeText(pd))}</div>`:''}${pd.location_enabled===false?'':`<div class="meta-chip">⌖ ${esc(playdayLocationText(pd))}</div>`}<div class="meta-chip tikkie-meta">${tikkieMeta(pd)}</div></div>
-      <section class="flat-section"><h2>Jouw status</h2><div class="choice-grid luxe-choices"><button class="choice ${rv?.response==='playing'?'selected':''}" data-rsvp="playing"><b class="choice-mark">✓</b><span>Ik speel mee</span></button><button class="choice no ${rv?.response==='not_playing'?'selected':''}" data-rsvp="not_playing"><b class="choice-mark">✕</b><span>Ik kan niet</span></button></div></section>
+      <section class="flat-section"><h2>Jouw status</h2><div class="choice-grid luxe-choices"><button class="choice ${selectedResponse==='playing'?'selected':''}" data-rsvp="playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✓</b><span>Ik speel mee</span></button><button class="choice no ${selectedResponse==='not_playing'?'selected':''}" data-rsvp="not_playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✕</b><span>Ik kan niet</span></button></div></section>
       <section class="flat-section signup-overview"><div class="section-title"><h2>Spelers (${all.length})</h2><span class="host-pill">Host: ${playerNameMarkup(pd.host_id)}</span></div><div class="signup-courts">${courtGroups}</div>${renderReserveList(reserves,users)}</section>
-      <section class="flat-section progress-panel"><div class="progress-head"><div class="progress-icon">▣</div><div><strong>${progressTitle}</strong><span>${progressText}</span></div></div><div class="bar-track"><i style="width:${progressWidth}%"></i></div>${paymentAction}</section>
+      ${progressTitle?`<section class="flat-section progress-panel"><div class="progress-head"><div class="progress-icon">▣</div><div><strong>${progressTitle}</strong><span>${progressText}</span></div></div><div class="bar-track"><i style="width:${progressWidth}%"></i></div>${paymentAction}</section>`:''}
       ${lobbyBox}${hostPanel}${livePanel}${renderReviewPanel(pd,attendance,reviews,myReview,host)}
       <section class="flat-section"><h2>Wedstrijden (${dayMatches.length})</h2><div class="open-rows">${dayMatches.map(m=>renderMatchRow(m,users,host)).join('')||'<div class="empty-state">Nog geen wedstrijden op deze speeldag.</div>'}</div></section>
       ${isAdmin()?`<section class="flat-section admin-actions"><button class="btn ghost" data-edit-pd>Speeldag wijzigen</button><button class="btn danger" data-delete-pd>Speeldag verwijderen</button></section>`:''}`;
@@ -265,7 +274,7 @@
     $$('[data-history-playday]').forEach(b=>b.onclick=()=>openPersonalHistory(b.dataset.historyPlayday,current().id));
     $$('[data-year]').forEach(b=>b.onclick=()=>{state.year+=Number(b.dataset.year);render();});
     $$('.day[data-date]').forEach(b=>b.onclick=()=>{const pd=b.dataset.pd?playdayById(b.dataset.pd):null;state.selectedCalendarDate=b.dataset.date;if(pd){render();}else if(isAdmin())openPlaydayForm(null,b.dataset.date);else render();});
-    $$('[data-rsvp]').forEach(b=>b.onclick=()=>run(()=>DB.setRsvp(state.selectedPlaydayId,b.dataset.rsvp),'Keuze opgeslagen'));
+    $$('[data-rsvp]').forEach(b=>b.onclick=()=>updateRsvp(b.dataset.rsvp));
     $$('[data-slot-paid]').forEach(b=>b.onclick=()=>run(()=>DB.setSlotPaid(b.dataset.slotPaid,b.dataset.paid==='true'),b.dataset.paid==='true'?'Betaling als betaald gemarkeerd':'Betaling teruggezet naar niet betaald'));
     $('[data-back-list]')?.addEventListener('click',()=>{state.playdayList=true;render();});
     $('[data-delete-pd]')?.addEventListener('click',()=>confirmAction('Speeldag verwijderen?','Alle deelnemers, wedstrijden, uitslagen en gekoppelde informatie worden definitief verwijderd.',()=>DB.deletePlayday(state.selectedPlaydayId)));
@@ -301,6 +310,22 @@
   }
 
   async function run(fn,success){ try{await fn();closeModal();toast(success);render();}catch(e){toast(e.message||'Er ging iets mis.',true);} }
+  async function updateRsvp(response){
+    const playdayId=state.selectedPlaydayId;
+    if(!playdayId||state.pendingRsvp)return;
+    state.pendingRsvp={playdayId,response};
+    render();
+    try{
+      await DB.setRsvp(playdayId,response);
+      state.pendingRsvp=null;
+      toast('Keuze opgeslagen');
+      render();
+    }catch(e){
+      state.pendingRsvp=null;
+      toast(e.message||'Je keuze kon niet worden opgeslagen.',true);
+      render();
+    }
+  }
   function confirmAction(title,text,fn){modal(title,`<p class="muted">${esc(text)}</p><div class="action-row"><button class="btn ghost" data-close-modal>Annuleren</button><button class="btn danger" id="confirmYes">Doorgaan</button></div>`,()=>{$('#confirmYes').onclick=()=>run(fn,'Opgeslagen');});}
 
   function openPlaydayForm(pd,date=todayISO()){
@@ -389,6 +414,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.5.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-350')){sessionStorage.setItem('wepadel-sw-350','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.5.1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-351')){sessionStorage.setItem('wepadel-sw-351','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();

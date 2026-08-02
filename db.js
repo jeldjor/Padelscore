@@ -380,26 +380,37 @@
     if (attendance && response !== 'playing') {
       throw new Error('Je bent al in de lobby. Je aanmelding kan voor deze speeldag niet meer worden gewijzigd.');
     }
-    const { error } = await client.from('rsvps').upsert({
+    const { data, error } = await client.from('rsvps').upsert({
       playday_id: playdayId,
       user_id: me.id,
       response
-    }, { onConflict: 'playday_id,user_id' });
+    }, { onConflict: 'playday_id,user_id' }).select('playday_id,user_id,response').single();
     if (error) fail(error);
+    if (!data || data.user_id !== me.id || data.playday_id !== playdayId || data.response !== response) {
+      throw new Error('Je keuze kon niet worden bevestigd. Probeer opnieuw.');
+    }
     if (response !== 'playing') {
       const del = await client.from('attendance').delete().eq('playday_id', playdayId).eq('user_id', me.id);
       if (del.error) fail(del.error);
     }
-    return loadAll();
+    await loadAll();
+    const saved = cache.rsvps.find(r => r.playday_id === playdayId && r.user_id === me.id);
+    if (saved?.response !== response) throw new Error('Je keuze is niet bijgewerkt. Probeer opnieuw.');
+    return saved;
   }
 
   async function setSlotPaid(slotId, paid) {
+    requireAdmin();
     const slot = cache.slots.find(s => s.id === slotId);
-    const playday = slot && cache.playdays.find(p => p.id === slot.playday_id);
-    if (!slot || !canHost(playday)) throw new Error('Alleen de host of beheerder kan de betaalstatus wijzigen.');
-    const { error } = await client.from('playday_slots').update({ paid: Boolean(paid) }).eq('id', slotId);
+    if (!slot) throw new Error('Baanplek niet gevonden.');
+    const expected = Boolean(paid);
+    const { data, error } = await client.from('playday_slots').update({ paid: expected }).eq('id', slotId).select('id,paid').single();
     if (error) fail(error);
-    return loadAll();
+    if (!data || data.id !== slotId || Boolean(data.paid) !== expected) throw new Error('De betaalstatus kon niet worden bevestigd.');
+    await loadAll();
+    const saved = cache.slots.find(s => s.id === slotId);
+    if (!saved || Boolean(saved.paid) !== expected) throw new Error('De betaalstatus is niet bijgewerkt. Probeer opnieuw.');
+    return saved;
   }
 
   async function enterLobby(playdayId) {
