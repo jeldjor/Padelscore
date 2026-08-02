@@ -10,7 +10,7 @@
   <title>WEPADEL</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=3.1.1">
+  <link rel="stylesheet" href="styles.css?v=3.2.0">
 </head>
 <body>
   <div id="toast" class="toast" aria-live="polite"></div>
@@ -18,39 +18,49 @@
   <section id="loginScreen" class="screen login-screen">
     <div class="court-lines"></div>
     <div class="splash-brand">
-      <img src="logo-wepadel.svg" class="wepadel-logo" alt="WEPADEL">
-      <div class="padel-ball"></div>
+      <img src="logo-wepadel.png" class="wepadel-logo" alt="WEPADEL">
     </div>
-    <div class="login-card">
+    <div class="login-content" id="loginPanel">
       <h2>Welkom bij WEPADEL</h2>
-      <p class="muted">Log in met de gebruikersnaam die de beheerder heeft aangemaakt.</p>
+      <p class="muted">Log in om je speeldagen, uitslagen en statistieken te bekijken.</p>
       <form id="loginForm">
         <label>Gebruikersnaam<input id="loginUsername" autocomplete="username" autocapitalize="none" required></label>
         <label>Wachtwoord<input id="loginPassword" type="password" autocomplete="current-password" required></label>
         <button class="btn primary full" type="submit">Inloggen</button>
       </form>
-      <p class="demo-help">Nog geen account? De competitiebeheerder kan je toevoegen.</p>
+      <button class="text-button" id="showRegister" type="button">Nieuw account aanmaken</button>
     </div>
-    <div class="powered"><span>POWERED BY</span><img src="logo-gjmotion.svg" alt="GJmotion"></div>
+    <div class="login-content hidden" id="registerPanel">
+      <h2>Account aanmaken</h2>
+      <p class="muted">Na je aanmelding moet de beheerder je account eerst goedkeuren.</p>
+      <form id="registerForm" class="register-form">
+        <div class="form-grid compact-fields">
+          <label>Voornaam<input name="first_name" autocomplete="given-name" required maxlength="40"></label>
+          <label>Achternaam<input name="last_name" autocomplete="family-name" required maxlength="60"></label>
+        </div>
+        <label>Gebruikersnaam<input name="username" autocomplete="username" autocapitalize="none" minlength="3" maxlength="30" required></label>
+        <label>Wachtwoord<input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Wachtwoord herhalen<input name="password_repeat" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Competitiecode<input name="competition_code" autocomplete="off" minlength="6" required></label>
+        <button class="btn primary full" type="submit">Aanmelding versturen</button>
+      </form>
+      <button class="text-button" id="showLogin" type="button">Terug naar inloggen</button>
+    </div>
+    <div class="powered"><span>POWERED BY</span><img src="logo-gjmotion.png" alt="GJ MOTION"></div>
   </section>
 
   <div id="appShell" class="app-shell hidden">
     <header class="topbar">
       <button id="backButton" class="icon-btn hidden" aria-label="Terug">‹</button>
-      <div class="brand compact"><img src="logo-wepadel.svg" alt="WEPADEL"></div>
-      <div class="topbar-actions">
-        <span id="syncBadge" class="sync-badge">Online</span>
-        <button id="profileButton" class="avatar-btn" aria-label="Profiel">G</button>
-      </div>
+      <div class="brand compact"><img src="logo-wepadel.png" alt="WEPADEL"></div>
     </header>
     <main id="mainContent" class="main-content"></main>
     <nav id="bottomNav" class="bottom-nav">
       <button data-page="dashboard" class="active"><span>⌂</span>Overzicht</button>
-      <button data-page="calendar"><span>▦</span>Kalender</button>
-      <button data-page="playday"><span>☷</span>Speeldagen</button>
-      <button data-page="ranking"><span>▥</span>Statistieken</button>
+      <button data-page="playday"><span>▦</span>Speeldagen</button>
       <button data-page="history"><span>☰</span>Historie</button>
-      <button data-page="admin" data-admin-only class="hidden"><span>⚙</span>Beheer</button>
+      <button data-page="ranking"><span>▥</span>Statistieken</button>
+      <button data-page="account"><span>◎</span><b id="accountNavLabel">Account</b></button>
     </nav>
   </div>
 
@@ -89,9 +99,9 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=3.1.1"></script>
-  <script src="scoring.js?v=3.1.1"></script>
-  <script src="db.js?v=3.1.1"></script>
-  <script src="app.js?v=3.1.1"></script>
+  <script src="config.js?v=3.2.0"></script>
+  <script src="scoring.js?v=3.2.0"></script>
+  <script src="db.js?v=3.2.0"></script>
+  <script src="app.js?v=3.2.0"></script>
 </body>
 </html>

@@ -201,6 +201,17 @@
     return me;
   }
 
+  async function register(input) {
+    const result = await callFunction(cfg.registerFunctionName || 'self-register', {
+      first_name: String(input.first_name || '').trim(),
+      last_name: String(input.last_name || '').trim(),
+      username: String(input.username || '').trim().toLowerCase(),
+      password: String(input.password || ''),
+      competition_code: String(input.competition_code || '').trim()
+    }, false);
+    return result;
+  }
+
   async function logout() {
     try { await client.auth.signOut(); } catch {}
     await clearLocalSession();
@@ -237,6 +248,27 @@
     requireAdmin();
     await callFunction(cfg.adminFunctionName || 'admin-users', { action: 'create', ...input });
     return loadAll();
+  }
+
+  async function approveUser(id) {
+    requireAdmin();
+    await callFunction(cfg.adminFunctionName || 'admin-users', { action: 'approve', user_id: id });
+    return loadAll();
+  }
+
+  async function rejectUser(id) {
+    requireAdmin();
+    await callFunction(cfg.adminFunctionName || 'admin-users', { action: 'reject', user_id: id });
+    return loadAll();
+  }
+
+  async function updateRegistrationCode(code) {
+    requireAdmin();
+    await callFunction(cfg.adminFunctionName || 'admin-users', {
+      action: 'update_registration_code',
+      competition_code: String(code || '').trim()
+    });
+    return true;
   }
 
   async function updateUser(id, patch) {
@@ -512,8 +544,8 @@
   }
 
   window.PadelDB = {
-    mode: 'online', client, init, login, logout, current, isAdmin, canHost,
-    listUsers, createUser, updateUser, changePassword, adminResetPassword, deleteUser,
+    mode: 'online', client, init, login, register, logout, current, isAdmin, canHost,
+    listUsers, createUser, approveUser, rejectUser, updateUser, updateRegistrationCode, changePassword, adminResetPassword, deleteUser,
     listPlaydays, getPlayday, upsertPlayday, deletePlayday,
     setRsvp, listRsvps, enterLobby, setReady, listAttendance, setAttendance,
     listMatches, createMatch, updateMatchScore, finishMatch, deleteMatch,
