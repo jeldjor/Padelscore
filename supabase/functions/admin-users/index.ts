@@ -94,16 +94,20 @@ Deno.serve(async (req) => {
     }
     const profileUpdate = await fetch(`${url}/rest/v1/profiles?id=eq.${me.id}`, {
       method: 'PATCH',
-      headers: adminHeaders,
+      headers: { ...adminHeaders, Prefer: 'return=representation' },
       body: JSON.stringify({ avatar_id: avatarId }),
     });
-    if (!profileUpdate.ok) return json({ error: 'Avatar wijzigen is mislukt.' }, profileUpdate.status);
+    const updatedProfiles = await profileUpdate.json().catch(() => []);
+    if (!profileUpdate.ok || Number(updatedProfiles?.[0]?.avatar_id) !== avatarId) {
+      return json({ error: 'Avatar wijzigen is mislukt.' }, profileUpdate.ok ? 500 : profileUpdate.status);
+    }
     const metadata = { ...(me.user_metadata || {}), avatar_id: avatarId };
-    await fetch(`${url}/auth/v1/admin/users/${me.id}`, {
+    const authUpdate = await fetch(`${url}/auth/v1/admin/users/${me.id}`, {
       method: 'PUT',
       headers: adminHeaders,
       body: JSON.stringify({ user_metadata: metadata }),
     });
+    if (!authUpdate.ok) return json({ error: 'Avatar is opgeslagen, maar de accountgegevens konden niet worden ververst.' }, 500);
     return json({ ok: true, avatar_id: avatarId });
   }
 

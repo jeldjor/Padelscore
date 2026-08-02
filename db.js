@@ -22,6 +22,7 @@
     users: [],
     playdays: [],
     rsvps: [],
+    slots: [],
     attendance: [],
     matches: [],
     reviews: []
@@ -69,6 +70,7 @@
     host_id: input.host_id,
     court_count: Math.max(1, Number(input.court_count) || 1),
     status: input.status || 'planned',
+    duration_minutes: input.duration_minutes ? Math.max(1, Number(input.duration_minutes)) : null,
     cost_per_player: input.cost_per_player ?? null,
     tikkie_url: input.tikkie_url || ''
   });
@@ -100,6 +102,7 @@
       client.from('profiles').select('*').order('display_name'),
       client.from('playdays').select('*').order('play_date'),
       client.from('rsvps').select('*'),
+      client.from('playday_slots').select('*').order('court_number').order('slot_number'),
       client.from('attendance').select('*'),
       client.from('matches').select('*').order('started_at', { ascending: false }),
       client.from('session_reviews').select('*')
@@ -110,12 +113,13 @@
     cache.users = requests[1].data || [];
     cache.playdays = (requests[2].data || []).map(normalizePlayday);
     cache.rsvps = requests[3].data || [];
-    cache.attendance = requests[4].data || [];
-    cache.matches = (requests[5].data || []).map(m => ({
+    cache.slots = requests[4].data || [];
+    cache.attendance = requests[5].data || [];
+    cache.matches = (requests[6].data || []).map(m => ({
       ...m,
       score_state: m.score_state && Object.keys(m.score_state).length ? m.score_state : PadelScoring.freshScore()
     }));
-    cache.reviews = requests[6].data || [];
+    cache.reviews = requests[7].data || [];
     emit();
     return current();
   }
@@ -125,6 +129,7 @@
     cache.users = [];
     cache.playdays = [];
     cache.rsvps = [];
+    cache.slots = [];
     cache.attendance = [];
     cache.matches = [];
     cache.reviews = [];
@@ -140,7 +145,7 @@
   function subscribe() {
     if (channel) client.removeChannel(channel);
     channel = client.channel('padelscore-live');
-    ['profiles','playdays','rsvps','attendance','matches','session_reviews'].forEach(table => {
+    ['profiles','playdays','rsvps','playday_slots','attendance','matches','session_reviews'].forEach(table => {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleRefresh);
     });
     channel.subscribe();
@@ -243,6 +248,7 @@
   const listPlaydays = () => clone(cache.playdays).sort((a,b) => a.date.localeCompare(b.date));
   const getPlayday = id => clone(cache.playdays.find(p => p.id === id) || null);
   const listRsvps = playdayId => clone(cache.rsvps.filter(r => !playdayId || r.playday_id === playdayId));
+  const listSlots = playdayId => clone(cache.slots.filter(s => !playdayId || s.playday_id === playdayId));
   const listAttendance = playdayId => clone(cache.attendance.filter(a => a.playday_id === playdayId));
   const listMatches = playdayId => clone(cache.matches.filter(m => !playdayId || m.playday_id === playdayId));
   const listReviews = playdayId => clone(cache.reviews.filter(r => r.playday_id === playdayId));
@@ -293,8 +299,12 @@
     requireUser();
     const value = Number(avatarId);
     if (!Number.isInteger(value) || value < 1 || value > 50) throw new Error('Kies een geldige avatar.');
-    await callFunction(cfg.adminFunctionName || 'admin-users', { action: 'update_own_avatar', avatar_id: value });
-    return loadAll();
+    const result = await callFunction(cfg.adminFunctionName || 'admin-users', { action: 'update_own_avatar', avatar_id: value });
+    await loadAll();
+    if (Number(current()?.avatar_id) !== value || Number(result?.avatar_id) !== value) {
+      throw new Error('De avatar kon niet worden opgeslagen. Probeer opnieuw.');
+    }
+    return current();
   }
 
   async function changePassword(oldPassword, newPassword) {
@@ -380,6 +390,15 @@
       const del = await client.from('attendance').delete().eq('playday_id', playdayId).eq('user_id', me.id);
       if (del.error) fail(del.error);
     }
+    return loadAll();
+  }
+
+  async function setSlotPaid(slotId, paid) {
+    const slot = cache.slots.find(s => s.id === slotId);
+    const playday = slot && cache.playdays.find(p => p.id === slot.playday_id);
+    if (!slot || !canHost(playday)) throw new Error('Alleen de host of beheerder kan de betaalstatus wijzigen.');
+    const { error } = await client.from('playday_slots').update({ paid: Boolean(paid) }).eq('id', slotId);
+    if (error) fail(error);
     return loadAll();
   }
 
@@ -567,7 +586,7 @@
     mode: 'online', client, init, login, register, logout, current, isAdmin, canHost,
     listUsers, createUser, approveUser, rejectUser, updateUser, saveAvatar, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
     listPlaydays, getPlayday, upsertPlayday, deletePlayday,
-    setRsvp, listRsvps, enterLobby, setReady, listAttendance, setAttendance,
+    setRsvp, listRsvps, listSlots, setSlotPaid, enterLobby, setReady, listAttendance, setAttendance,
     listMatches, createMatch, updateMatchScore, finishMatch, deleteMatch,
     endSession, reviewSession, resolveSession, listReviews,
     refresh: loadAll

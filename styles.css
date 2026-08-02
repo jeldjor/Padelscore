@@ -182,3 +182,26 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   #loginPanel>p{max-width:330px}
   .login-screen .powered img{height:40px}
 }
+
+/* --- v3.5.0 reserves, inherited payments and playday duration --- */
+.avatar-sprite.inline{margin-right:0;margin-left:.3em}
+.avatar-name{gap:0;white-space:nowrap}
+.account-compact>div,.player-popup-head>div{display:grid;gap:3px}
+.compact-admin-row{grid-template-columns:minmax(0,1fr) auto}
+.compact-admin-row>div:first-child{display:grid;gap:3px}
+
+.calendar-status-legend i.no{display:inline-grid;place-items:center;width:11px;height:11px;border-radius:0;background:transparent;color:var(--red);font-size:14px;font-style:normal;font-weight:1000;line-height:1}
+.choice{display:flex;align-items:center;justify-content:center;gap:8px}.choice-mark{font-size:18px;line-height:1}.choice.no .choice-mark{color:var(--red)}.choice.no.selected .choice-mark{color:#fff}
+
+.tikkie-meta{display:flex;align-items:center;justify-content:center;gap:7px}.tikkie-mark{display:inline-grid;place-items:center;width:21px;height:21px;flex:0 0 auto;border-radius:7px 7px 7px 2px;background:#25c6c8;color:#fff;font-size:13px;font-weight:1000;box-shadow:inset -4px -4px rgba(33,18,79,.18)}
+.pay-btn{display:flex;align-items:center;justify-content:center;gap:8px}.pay-btn .tikkie-mark{background:#24306f}
+
+.signup-overview{padding-bottom:9px}.signup-courts{display:grid;gap:8px}.signup-court,.reserve-list{border-top:1px solid rgba(94,124,114,.24);padding-top:8px}.signup-court>header,.reserve-list>header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}.signup-court h3,.reserve-list h3{margin:0;font-size:13px}.signup-court>header>span,.reserve-list>header>span{font-size:10px;color:var(--muted)}.signup-court>header .complete{color:var(--green2)}.signup-court>header .incomplete{color:var(--amber)}
+.signup-player-row{min-height:35px;display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(94,124,114,.13)}.signup-player-row:last-child{border-bottom:0}.signup-player-row .avatar-name{min-width:0;overflow:hidden;text-overflow:ellipsis}.signup-player-row>.mini-pill{flex:0 0 auto}.reserve-list{margin-top:10px}.reserve-position{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#2d2410;color:#ffd163;font-size:11px}.mini-pill.reserve{color:#ffd163;border-color:rgba(255,177,0,.35)}
+.payment-cell{margin-left:auto;display:grid;justify-items:end;gap:1px;min-width:86px}.payment-cell small{font-size:8px;color:#91a69f;text-align:right}.payment-toggle{border:0;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:900}.payment-toggle.paid,.payment-state.paid{background:rgba(145,207,16,.17);color:#c7f063}.payment-toggle.unpaid,.payment-state.unpaid{background:rgba(255,176,0,.13);color:#ffd163}.payment-state{border-radius:999px;padding:5px 8px;font-size:9px;font-weight:900}.empty-paid{color:#c7f063}.paid-confirm{margin:10px 0 0;color:#c7f063;text-align:center;font-weight:900}
+
+.time-duration-grid.time-off .time-only{display:none}.time-duration-grid.time-off label:last-child{grid-column:1/-1}.time-duration-grid:not(.time-off){grid-template-columns:repeat(3,minmax(0,1fr))}
+
+@media(max-width:480px){
+  .signup-player-row{gap:5px}.signup-player-row .avatar-name{font-size:12px}.payment-cell{min-width:75px}.payment-toggle,.payment-state{font-size:8px;padding:4px 6px}.payment-cell small{max-width:86px}.time-duration-grid:not(.time-off){grid-template-columns:repeat(2,minmax(0,1fr))}.time-duration-grid:not(.time-off) label:last-child{grid-column:1/-1}.tikkie-meta{gap:5px}.tikkie-mark{width:19px;height:19px}
+}
