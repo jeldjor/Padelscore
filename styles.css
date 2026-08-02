@@ -86,3 +86,76 @@ html,body{height:100%;overflow:hidden}
 .account-compact{padding:9px 0}.account-actions .open-action{min-height:46px}.admin-tabs.four-tabs{margin-bottom:4px}.admin-tabs.luxe button{height:38px;padding:5px}.admin-panel{padding-top:7px}.compact-admin-row{min-height:58px;padding:5px 0}.compact-admin-row .admin-item-actions{gap:4px}.compact-admin-row .btn.small{height:31px;padding:0 8px;font-size:10px}.inline-setting{padding:8px 0}
 @media(max-width:480px){.topbar{height:calc(78px + env(safe-area-inset-top))}.brand.compact img{width:74px;height:70px}.main-content{height:calc(100dvh - 156px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding:1px 12px 6px}.dashboard-result-row{grid-template-columns:70px 46px 1fr auto;gap:5px}.dashboard-result-row small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ranking-metrics{padding-left:0;grid-template-columns:repeat(4,1fr);row-gap:7px}.ranking-metrics>span:nth-child(n+5){border-top:1px solid rgba(94,124,114,.15);padding-top:6px}.personal-detail-strip small{font-size:8px}.personal-detail-strip b{font-size:16px}}
 @media(max-height:700px){.topbar{height:calc(68px + env(safe-area-inset-top))}.brand.compact img{width:62px;height:60px}.main-content{height:calc(100dvh - 146px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}.dashboard-greeting h1,.dashboard-greeting strong{font-size:22px}.stats-compact-grid,.stats-compact-grid.dashboard-kpis{min-height:46px}.stat-compact{min-height:40px}.event-row.luxe{min-height:46px}.date-box{height:43px}.day{height:31px}.calendar-head.luxe button,.today-btn{height:32px}}
+
+
+/* --- v3.4.0 calendar statuses, compact forms and player avatars --- */
+.avatar-sprite{display:inline-block;flex:0 0 auto;background-image:url('wepadel-avatar-sprite.png');background-repeat:no-repeat;background-size:1000% 500%;background-color:transparent}
+.avatar-sprite.inline{width:1.25em;height:1.25em;vertical-align:-.23em;margin-right:.28em}
+.avatar-sprite.profile{width:48px;height:48px}
+.avatar-sprite.admin{width:36px;height:36px}
+.avatar-sprite.picker{width:100%;height:100%}
+.avatar-name{display:inline-flex;align-items:center;min-width:0}
+.dashboard-greeting .avatar-name{overflow:hidden;text-overflow:ellipsis}
+.account-compact>.avatar-sprite,.player-popup-head>.avatar-sprite{border:0;border-radius:0}
+.avatar-fieldset{margin:10px 0 12px;padding:0;border:0;min-width:0}
+.avatar-fieldset legend{padding:0 0 7px;color:#d8e2de;font-size:13px}
+.avatar-picker{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}
+.avatar-option{aspect-ratio:1;border:1px solid transparent;border-radius:8px;padding:1px;background:rgba(9,31,25,.48);overflow:hidden}
+.avatar-option.selected{border-color:var(--green2);background:rgba(145,207,16,.13);box-shadow:0 0 0 1px var(--green2)}
+.registration-avatar-slot{text-align:left}
+#registerPanel{scrollbar-width:none}
+#registerPanel::-webkit-scrollbar{display:none}
+
+.day{display:grid;place-items:center;overflow:visible}
+.day span{display:grid;place-items:center;width:28px;height:28px;margin:auto;border-radius:50%;line-height:1}
+.day.playday span{font-weight:900;color:#07110d}
+.day.rsvp-open span{background:#ff9e24}
+.day.rsvp-playing span{background:#91cf10}
+.day.rsvp-not-playing span{background:#ff554d;color:#fff}
+.day.today span{width:28px;height:28px;margin:auto;background:transparent;color:var(--green2);border:1.5px solid var(--green2);border-radius:50%;font-weight:900;box-shadow:none}
+.day.today.playday span{color:#07110d;border:0;box-shadow:0 0 0 2px #04110f,0 0 0 3.5px var(--green2)}
+.day.today.rsvp-not-playing span{color:#fff}
+.day.playday i{display:none}
+.day.selected:not(.today){outline:0}
+.day.selected:not(.today) span{box-shadow:0 0 0 2px #04110f,0 0 0 3px rgba(255,255,255,.72)}
+.calendar-status-legend{display:flex;justify-content:center;gap:14px;padding:5px 0 1px;color:#91a69f;font-size:10px}
+.calendar-status-legend span{display:inline-flex;align-items:center;gap:5px}
+.calendar-status-legend i{width:8px;height:8px;border-radius:50%}
+.calendar-status-legend .open{background:#ff9e24}.calendar-status-legend .yes{background:#91cf10}.calendar-status-legend .no{background:#ff554d}
+
+.modal-backdrop{padding:max(8px,env(safe-area-inset-top)) 10px max(8px,env(safe-area-inset-bottom))}
+.modal-card{width:min(100%,560px);max-height:calc(100dvh - max(16px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)));padding:12px 16px 14px;border-radius:16px;overflow-y:auto;overscroll-behavior:contain}
+.modal-head{position:sticky;top:-12px;z-index:2;margin:0 -2px 6px;padding:10px 2px 8px;background:#071b16}
+.modal-head h2{margin:0;font-size:clamp(23px,7vw,32px)}
+.compact-playday-form label{margin:5px 0;gap:4px}
+.compact-playday-form input,.compact-playday-form select{height:41px;padding:7px 10px;border:0;border-bottom:1px solid #46645a;border-radius:0;background:rgba(4,20,16,.35)}
+.compact-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.compact-form-grid.three{grid-template-columns:.65fr 1fr 1fr}
+.optional-form-section{padding:7px 0;border-bottom:1px solid rgba(94,124,114,.22)}
+.feature-toggle{display:flex!important;grid-template-columns:none!important;align-items:center;gap:10px!important;margin:0!important;padding:4px 0}
+.feature-toggle input{width:22px!important;height:22px!important;margin:0;accent-color:var(--green);flex:0 0 auto}
+.feature-toggle span{display:grid;gap:1px}
+.feature-toggle b{font-size:14px}.feature-toggle small{font-size:10px;color:#91a69f}
+.optional-form-section>div{max-height:90px;opacity:1;transition:.18s ease}
+.optional-form-section>div.disabled{max-height:0;opacity:0;overflow:hidden;pointer-events:none}
+.form-footer{position:sticky;bottom:-14px;display:flex;gap:8px;padding:9px 0 calc(2px + env(safe-area-inset-bottom));background:#071b16}
+.form-footer .btn.primary{flex:1}
+.playday-meta-cards{grid-template-columns:repeat(auto-fit,minmax(115px,1fr))}
+.account-avatar,.admin-avatar{display:none}
+
+@media(max-width:480px){
+  #registerPanel{max-height:calc(100dvh - 198px);overflow-y:auto;padding-bottom:8px}
+  .avatar-picker{gap:2px}.avatar-option{border-radius:6px;padding:0}
+  .compact-form-grid,.compact-form-grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .compact-form-grid.three label:last-child{grid-column:1/-1}
+  .playday-meta-cards{grid-template-columns:repeat(auto-fit,minmax(105px,1fr))}
+  .meta-chip+.meta-chip{border-top:0;border-left:1px solid rgba(111,143,132,.18)}
+  .day span,.day.today span{width:26px;height:26px}
+}
+@media(max-height:700px){
+  .modal-card{padding-top:8px}.modal-head{top:-8px}
+  .compact-playday-form label{margin:3px 0}
+  .compact-playday-form input,.compact-playday-form select{height:36px}
+  .optional-form-section{padding:4px 0}
+  .avatar-picker{gap:2px}
+}

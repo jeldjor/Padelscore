@@ -87,6 +87,26 @@ Deno.serve(async (req) => {
     return json({ ok: true, access_token: fresh.access_token, refresh_token: fresh.refresh_token, expires_in: fresh.expires_in, token_type: fresh.token_type });
   }
 
+  if (body.action === 'update_own_avatar') {
+    const avatarId = Number(body.avatar_id);
+    if (!Number.isInteger(avatarId) || avatarId < 1 || avatarId > 50) {
+      return json({ error: 'Kies een geldige avatar.' }, 400);
+    }
+    const profileUpdate = await fetch(`${url}/rest/v1/profiles?id=eq.${me.id}`, {
+      method: 'PATCH',
+      headers: adminHeaders,
+      body: JSON.stringify({ avatar_id: avatarId }),
+    });
+    if (!profileUpdate.ok) return json({ error: 'Avatar wijzigen is mislukt.' }, profileUpdate.status);
+    const metadata = { ...(me.user_metadata || {}), avatar_id: avatarId };
+    await fetch(`${url}/auth/v1/admin/users/${me.id}`, {
+      method: 'PUT',
+      headers: adminHeaders,
+      body: JSON.stringify({ user_metadata: metadata }),
+    });
+    return json({ ok: true, avatar_id: avatarId });
+  }
+
   if (me?.app_metadata?.role !== 'admin') return json({ error: 'Admin required' }, 403);
 
   if (body.action === 'update_registration_code') {
@@ -109,11 +129,13 @@ Deno.serve(async (req) => {
   const username = String(body.username || '').trim().toLowerCase();
   const displayName = String(body.display_name || username).trim().replace(/\s+/g, ' ');
   const email = username ? `${username}@padelscore.local` : '';
+  const avatarId = Number(body.avatar_id || 1);
 
   if (body.action === 'create') {
     if (!/^[a-z0-9._-]{3,30}$/.test(username)) return json({ error: 'Gebruikersnaam is ongeldig.' }, 400);
     if (displayName.length < 2 || displayName.length > 100) return json({ error: 'Naam is ongeldig.' }, 400);
     if (String(body.password || '').length < 8) return json({ error: 'Wachtwoord moet minimaal 8 tekens hebben.' }, 400);
+    if (!Number.isInteger(avatarId) || avatarId < 1 || avatarId > 50) return json({ error: 'Kies een geldige avatar.' }, 400);
 
     const create = await fetch(`${url}/auth/v1/admin/users`, {
       method: 'POST',
@@ -122,7 +144,7 @@ Deno.serve(async (req) => {
         email,
         password: body.password,
         email_confirm: true,
-        user_metadata: { display_name: displayName },
+        user_metadata: { display_name: displayName, avatar_id: avatarId },
         app_metadata: { role: 'player', username, must_change_password: true, approval_status: 'approved' },
       }),
     });
@@ -139,7 +161,7 @@ Deno.serve(async (req) => {
     const profile = await fetch(`${url}/rest/v1/profiles`, {
       method: 'POST',
       headers: { ...adminHeaders, Prefer: 'return=representation' },
-      body: JSON.stringify({ id: authUser.id, competition_id: competitionId, username, display_name: displayName, role: 'player', active: true, must_change_password: true, approval_status: 'approved', requested_at: new Date().toISOString() }),
+      body: JSON.stringify({ id: authUser.id, competition_id: competitionId, username, display_name: displayName, role: 'player', active: true, must_change_password: true, approval_status: 'approved', requested_at: new Date().toISOString(), avatar_id: avatarId }),
     });
     if (!profile.ok) {
       await fetch(`${url}/auth/v1/admin/users/${authUser.id}`, { method: 'DELETE', headers: adminHeaders });
@@ -184,19 +206,20 @@ Deno.serve(async (req) => {
 
   if (body.action === 'update') {
     if (!/^[a-z0-9._-]{3,30}$/.test(username)) return json({ error: 'Gebruikersnaam is ongeldig.' }, 400);
+    if (!Number.isInteger(avatarId) || avatarId < 1 || avatarId > 50) return json({ error: 'Kies een geldige avatar.' }, 400);
     if (displayName.length < 2 || displayName.length > 100) return json({ error: 'Naam is ongeldig.' }, 400);
     const active = body.active !== false;
     const appMetadata = { ...(authUser.app_metadata || {}), role: 'player', username, approval_status: 'approved' };
     const updateAuth = await fetch(`${url}/auth/v1/admin/users/${userId}`, {
       method: 'PUT',
       headers: adminHeaders,
-      body: JSON.stringify({ email, email_confirm: true, ban_duration: active ? 'none' : '876000h', user_metadata: { ...(authUser.user_metadata || {}), display_name: displayName }, app_metadata: appMetadata }),
+      body: JSON.stringify({ email, email_confirm: true, ban_duration: active ? 'none' : '876000h', user_metadata: { ...(authUser.user_metadata || {}), display_name: displayName, avatar_id: avatarId }, app_metadata: appMetadata }),
     });
     if (!updateAuth.ok) return json({ error: 'Account bijwerken is mislukt.' }, updateAuth.status);
     const updateProfile = await fetch(`${url}/rest/v1/profiles?id=eq.${userId}`, {
       method: 'PATCH',
       headers: adminHeaders,
-      body: JSON.stringify({ username, display_name: displayName, active, approval_status: 'approved', deleted_at: active ? null : new Date().toISOString() }),
+      body: JSON.stringify({ username, display_name: displayName, active, approval_status: 'approved', deleted_at: active ? null : new Date().toISOString(), avatar_id: avatarId }),
     });
     return updateProfile.ok ? json({ ok: true }) : json({ error: 'Profiel bijwerken is mislukt.' }, updateProfile.status);
   }

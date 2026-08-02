@@ -64,6 +64,8 @@
     start_time: input.start_time || '19:00',
     end_time: input.end_time || '21:00',
     location: input.location || '',
+    time_enabled: input.time_enabled !== false,
+    location_enabled: input.location_enabled !== false,
     host_id: input.host_id,
     court_count: Math.max(1, Number(input.court_count) || 1),
     status: input.status || 'planned',
@@ -207,7 +209,8 @@
       last_name: String(input.last_name || '').trim(),
       username: String(input.username || '').trim().toLowerCase(),
       password: String(input.password || ''),
-      competition_code: String(input.competition_code || '').trim()
+      competition_code: String(input.competition_code || '').trim(),
+      avatar_id: Math.max(1, Math.min(50, Number(input.avatar_id) || 1))
     }, false);
     return result;
   }
@@ -280,8 +283,17 @@
       user_id: id,
       username: patch.username ?? existing.username,
       display_name: patch.display_name ?? existing.display_name,
-      active: patch.active ?? existing.active
+      active: patch.active ?? existing.active,
+      avatar_id: Math.max(1, Math.min(50, Number(patch.avatar_id ?? existing.avatar_id) || 1))
     });
+    return loadAll();
+  }
+
+  async function saveAvatar(avatarId) {
+    requireUser();
+    const value = Number(avatarId);
+    if (!Number.isInteger(value) || value < 1 || value > 50) throw new Error('Kies een geldige avatar.');
+    await callFunction(cfg.adminFunctionName || 'admin-users', { action: 'update_own_avatar', avatar_id: value });
     return loadAll();
   }
 
@@ -553,7 +565,7 @@
 
   window.PadelDB = {
     mode: 'online', client, init, login, register, logout, current, isAdmin, canHost,
-    listUsers, createUser, approveUser, rejectUser, updateUser, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
+    listUsers, createUser, approveUser, rejectUser, updateUser, saveAvatar, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
     listPlaydays, getPlayday, upsertPlayday, deletePlayday,
     setRsvp, listRsvps, enterLobby, setReady, listAttendance, setAttendance,
     listMatches, createMatch, updateMatchScore, finishMatch, deleteMatch,

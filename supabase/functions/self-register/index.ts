@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
   const username = String(body?.username || '').trim().toLowerCase();
   const password = String(body?.password || '');
   const competitionCode = String(body?.competition_code || '').trim();
+  const avatarId = Number(body?.avatar_id);
 
   if (firstName.length < 2 || firstName.length > 40 || lastName.length < 2 || lastName.length > 60) {
     return json({ error: 'Vul een geldige voor- en achternaam in.' }, 400);
@@ -51,6 +52,9 @@ Deno.serve(async (req) => {
   }
   if (competitionCode.length < 6 || competitionCode.length > 80) {
     return json({ error: 'De competitiecode is onjuist.' }, 400);
+  }
+  if (!Number.isInteger(avatarId) || avatarId < 1 || avatarId > 50) {
+    return json({ error: 'Kies een geldige avatar.' }, 400);
   }
 
   const adminHeaders = {
@@ -86,7 +90,7 @@ Deno.serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { first_name: firstName, last_name: lastName, display_name: displayName },
+      user_metadata: { first_name: firstName, last_name: lastName, display_name: displayName, avatar_id: avatarId },
       app_metadata: { role: 'player', username, must_change_password: false, approval_status: 'pending' },
     }),
   });
@@ -109,6 +113,7 @@ Deno.serve(async (req) => {
       must_change_password: false,
       approval_status: 'pending',
       requested_at: new Date().toISOString(),
+      avatar_id: avatarId,
     }),
   });
   if (!profileRes.ok) {

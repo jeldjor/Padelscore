@@ -1,5 +1,5 @@
-const CACHE='wepadel-v3.3.0-fixed-layout';
-const CORE=['./','index.html','styles.css?v=3.3.0','config.js?v=3.3.0','scoring.js?v=3.3.0','db.js?v=3.3.0','app.js?v=3.3.0','manifest.json','logo-wepadel-transparent.png','logo-gjmotion-white.png','icons/icon-192.png','icons/icon-512.png'];
+const CACHE='wepadel-v3.4.0-calendar-avatars';
+const CORE=['./','index.html','styles.css?v=3.4.0','config.js?v=3.4.0','scoring.js?v=3.4.0','db.js?v=3.4.0','app.js?v=3.4.0','manifest.json','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(
   caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())
 ));
