@@ -10,25 +10,25 @@
   "theme_color": "#061512",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icons/wepadel-icon-192-v314.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-maskable-192.png",
+      "src": "icons/wepadel-maskable-192-v314.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/wepadel-icon-512-v314.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-maskable-512.png",
+      "src": "icons/wepadel-maskable-512-v314.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
