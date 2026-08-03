@@ -192,7 +192,7 @@
     const main=$('#mainContent');
     if(!current()){showLogin();return;}
     const shell=$('#appShell');
-    shell?.classList.toggle('dashboard-active',state.page==='dashboard');
+    shell?.classList.add('padel-banner-active');
     shell?.setAttribute('data-page',state.page);
     const pages={dashboard:renderDashboard,playday:renderPlayday,ranking:renderRanking,history:renderHistory,account:renderAccount};
     main.className=`main-content page-${state.page}${state.page==='playday'&&!state.playdayList?' page-playday-detail':''}`;
@@ -687,6 +687,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.16.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3160')){sessionStorage.setItem('wepadel-sw-3160','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.16.3',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3163')){sessionStorage.setItem('wepadel-sw-3163','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();

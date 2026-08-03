@@ -571,12 +571,12 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
 
 
 /* WEPADEL 3.16.0 — gekozen padelheader op het Overzicht */
-.app-shell.dashboard-active{
+.app-shell.padel-banner-active{
   position:relative;
   background:
     linear-gradient(180deg,rgba(2,13,10,.08) 0,rgba(2,13,10,.42) 280px,#020b09 470px);
 }
-.app-shell.dashboard-active::before{
+.app-shell.padel-banner-active::before{
   content:"";
   position:absolute;
   z-index:0;
@@ -587,35 +587,35 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   transform:translateX(-50%);
   background-image:
     linear-gradient(180deg,rgba(2,13,10,.12) 0%,rgba(2,13,10,.40) 58%,#020b09 100%),
-    url("dashboard-padel-header-v316.jpg");
+    url("dashboard-padel-header-v3161.jpg");
   background-repeat:no-repeat;
   background-position:center top;
   background-size:cover;
   pointer-events:none;
 }
-.app-shell.dashboard-active .topbar{
+.app-shell.padel-banner-active .topbar{
   position:relative;
   z-index:2;
   background:linear-gradient(180deg,rgba(2,12,10,.72),rgba(2,12,10,.16));
   border-bottom-color:transparent;
   backdrop-filter:none;
 }
-.app-shell.dashboard-active .main-content{
+.app-shell.padel-banner-active .main-content{
   position:relative;
   z-index:1;
 }
-.app-shell.dashboard-active .dashboard-greeting{
+.app-shell.padel-banner-active .dashboard-greeting{
   margin-top:2px;
   padding-top:4px;
   text-shadow:0 3px 14px rgba(0,0,0,.9);
 }
-.app-shell.dashboard-active .dashboard-kpis{
+.app-shell.padel-banner-active .dashboard-kpis{
   background:rgba(2,15,12,.52);
   border-top:1px solid rgba(137,176,162,.22);
   border-bottom:1px solid rgba(137,176,162,.22);
   backdrop-filter:blur(5px);
 }
-.app-shell.dashboard-active .dashboard-playdays{
+.app-shell.padel-banner-active .dashboard-playdays{
   background:rgba(2,15,12,.80)!important;
 }
 
@@ -666,4 +666,51 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   margin-top:3px;
   color:#89a198!important;
   font-size:10px!important;
+}
+
+/* WEPADEL 3.16.2 — sfeerbanner op ieder ingelogd scherm */
+.app-shell.padel-banner-active .main-content{
+  padding-top:18px;
+}
+.app-shell.padel-banner-active .page-playday,
+.app-shell.padel-banner-active .page-ranking,
+.app-shell.padel-banner-active .page-history,
+.app-shell.padel-banner-active .page-account{
+  position:relative;
+}
+.app-shell.padel-banner-active .main-content > section:first-child,
+.app-shell.padel-banner-active .main-content > .card:first-child,
+.app-shell.padel-banner-active .main-content > .page-head:first-child{
+  margin-top:6px;
+}
+
+/* WEPADEL 3.16.3 — compactere onderste navigatie, duidelijkere namen */
+.app-shell{
+  padding-bottom:calc(88px + env(safe-area-inset-bottom))!important;
+}
+.bottom-nav{
+  height:calc(78px + env(safe-area-inset-bottom))!important;
+  padding:4px 8px env(safe-area-inset-bottom)!important;
+}
+.bottom-nav button{
+  min-width:64px!important;
+  min-height:66px!important;
+  padding:6px 4px 5px!important;
+  gap:4px!important;
+}
+.bottom-nav button span{
+  font-size:22px!important;
+}
+.bottom-nav button b{
+  font-size:12.5px!important;
+  font-weight:700!important;
+  letter-spacing:.01em;
+  color:#aebbb6;
+}
+.bottom-nav button.active b{
+  color:var(--green2)!important;
+}
+.nav-action-badge{
+  top:1px!important;
+  right:14%!important;
 }
