@@ -905,3 +905,133 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
     flex-wrap:wrap;
   }
 }
+
+/* WEPADEL 3.18.0 — duelkaarten in rood vs blauw */
+.popup-match-list .open-rows{
+  display:grid;
+  gap:12px;
+}
+.match-duel-card{
+  display:grid;
+  gap:12px;
+  padding:12px;
+  border:1px solid rgba(100,129,119,.26);
+  border-radius:16px;
+  background:rgba(8,22,18,.58);
+}
+.match-duel-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.match-duel-meta{
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+.match-duel-meta strong{
+  font-size:14px;
+}
+.match-duel-meta small{
+  color:#91a69f;
+  margin:0;
+}
+.match-duel-body{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:stretch;
+  gap:10px;
+}
+.duel-team{
+  display:grid;
+  gap:7px;
+  padding:12px 10px;
+  border-radius:14px;
+  min-width:0;
+}
+.duel-team.blue{
+  background:linear-gradient(180deg,rgba(16,108,183,.32),rgba(7,57,97,.38));
+  border:1px solid rgba(97,173,235,.18);
+}
+.duel-team.red{
+  background:linear-gradient(180deg,rgba(197,47,61,.34),rgba(96,27,34,.42));
+  border:1px solid rgba(255,152,148,.16);
+}
+.duel-team-label{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  opacity:.9;
+}
+.duel-player{
+  font-size:14px;
+  font-weight:700;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.duel-score{
+  align-self:center;
+  display:grid;
+  place-items:center;
+  gap:1px;
+  min-width:48px;
+  padding:8px 6px;
+  border-radius:14px;
+  background:rgba(6,18,14,.92);
+  border:1px solid rgba(97,121,112,.26);
+}
+.duel-score b{
+  font-size:24px;
+  line-height:1;
+}
+.duel-score span{
+  color:#95a9a2;
+  font-size:14px;
+  line-height:1;
+}
+.duel-score-vs b{
+  font-size:18px;
+  letter-spacing:.06em;
+  color:#d9e3df;
+}
+.match-duel-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end;
+}
+.match-duel-actions .btn{
+  min-width:120px;
+}
+@media(max-width:520px){
+  .match-duel-body{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .duel-score{
+    order:2;
+    min-width:unset;
+    width:100%;
+    grid-auto-flow:column;
+    justify-content:center;
+    padding:8px 10px;
+  }
+  .duel-team.red{
+    order:3;
+  }
+  .match-duel-head{
+    align-items:stretch;
+  }
+  .match-duel-head .badge{
+    align-self:flex-start;
+  }
+  .match-duel-actions{
+    justify-content:stretch;
+  }
+  .match-duel-actions .btn{
+    flex:1 1 100%;
+    min-width:0;
+  }
+}

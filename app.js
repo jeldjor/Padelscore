@@ -369,11 +369,41 @@
   }
   function renderSpectatorCourt(m){ const d=S.display(m.score_state); return `<div class="court-card"><div class="court-title"><strong>Baan ${m.court_number}</strong><span class="badge green">Live</span></div><div class="teams"><div class="team-box blue"><strong>${playerNameMarkup(m.blue_player_1)} & ${playerNameMarkup(m.blue_player_2)}</strong><div class="score-mini">${m.score_state.blueGames} · ${d.bluePoints}</div></div><div class="versus">VS</div><div class="team-box red"><strong>${playerNameMarkup(m.red_player_1)} & ${playerNameMarkup(m.red_player_2)}</strong><div class="score-mini">${m.score_state.redGames} · ${d.redPoints}</div></div></div><button class="btn ghost full" data-view-scoreboard="${m.id}">Groot live scorebord</button></div>`; }
   function renderMatchRow(m,users,host,pd){
-    const blue=`${nameOf(m.blue_player_1)} & ${nameOf(m.blue_player_2)}`,red=`${nameOf(m.red_player_1)} & ${nameOf(m.red_player_2)}`;
-    const finished=m.status==='finished',scheduled=m.status==='scheduled'||(m.status==='active'&&!m.started_at),score=finished?`${m.blue_games}-${m.red_games}`:'tegen';
+    const blue1=nameOf(m.blue_player_1), blue2=nameOf(m.blue_player_2);
+    const red1=nameOf(m.red_player_1), red2=nameOf(m.red_player_2);
+    const finished=m.status==='finished',scheduled=m.status==='scheduled'||(m.status==='active'&&!m.started_at),live=!finished&&!scheduled;
     const canDelete=isAdmin()||(host&&isPlaydayToday(pd));
+    const statusText=finished?'Wedstrijd afgerond':scheduled?'Gepland · nog niet gestart':liveScoringEnabled(pd)?'Live score actief':'Bezig · uitslag na afloop';
+    const statusBadge=finished?'<span class="badge green">Klaar</span>':scheduled?'<span class="badge black">Gepland</span>':`<span class="badge ${liveScoringEnabled(pd)?'green':'yellow'}">${liveScoringEnabled(pd)?'Live':'Bezig'}</span>`;
+    const scoreBlock=finished?`<div class="duel-score"><b>${m.blue_games}</b><span>-</span><b>${m.red_games}</b></div>`:'<div class="duel-score duel-score-vs"><b>VS</b></div>';
+    const primaryAction=scheduled&&host
+      ?`<button class="btn small primary" data-start-match="${m.id}">Start wedstrijd</button>`
+      :!finished&&host
+        ?`<button class="btn small primary" ${liveScoringEnabled(pd)?`data-open-match="${m.id}"`:`data-manual-result="${m.id}"`}>${liveScoringEnabled(pd)?'Open duel':'Uitslag invullen'}</button>`
+        :'';
     const editResult=finished&&isAdmin()?`<button class="btn small primary" data-manual-result="${m.id}">Uitslag wijzigen</button>`:'';
-    return `<div class="open-row match-row"><div><strong>Baan ${m.court_number}: ${esc(blue)} ${score} ${esc(red)}</strong><small>${finished?'Wedstrijd afgerond':scheduled?'Gepland · nog niet gestart':liveScoringEnabled(pd)?'Live score actief':'Uitslag na afloop invullen'}</small></div><div class="list-actions">${scheduled&&host?`<button class="btn small primary" data-start-match="${m.id}">Start wedstrijd</button>`:!finished&&host?`<button class="btn small primary" ${liveScoringEnabled(pd)?`data-open-match="${m.id}"`:`data-manual-result="${m.id}"`}>${liveScoringEnabled(pd)?'Open':'Uitslag'}</button>`:''}${finished?'<span class="badge green">Klaar</span>':''}${editResult}${canDelete?`<button class="btn small ghost" data-delete-match="${m.id}">Verwijder</button>`:''}</div></div>`;
+    return `<article class="match-duel-card">
+      <div class="match-duel-head">
+        <div class="match-duel-meta"><strong>Wedstrijd · Baan ${m.court_number}</strong><small>${statusText}</small></div>
+        ${statusBadge}
+      </div>
+      <div class="match-duel-body">
+        <div class="duel-team blue">
+          <div class="duel-team-label">Blauw</div>
+          <div class="duel-player">${esc(blue1)}</div>
+          <div class="duel-player">${esc(blue2)}</div>
+        </div>
+        ${scoreBlock}
+        <div class="duel-team red">
+          <div class="duel-team-label">Rood</div>
+          <div class="duel-player">${esc(red1)}</div>
+          <div class="duel-player">${esc(red2)}</div>
+        </div>
+      </div>
+      <div class="match-duel-actions">
+        ${primaryAction}${editResult}${canDelete?`<button class="btn small ghost" data-delete-match="${m.id}">Verwijder</button>`:''}
+      </div>
+    </article>`;
   }
   function renderReviewPanel(pd,attendance,reviews,myReview,host){ if(!['review','host_review','approved'].includes(pd.session_status))return''; const rejectCount=reviews.filter(r=>r.decision==='reject').length; if(pd.session_status==='approved')return `<section class="flat-section"><span class="badge green">Goedgekeurd</span><h2>Speeldag definitief</h2><p class="muted">${rejectCount} afkeuring${rejectCount===1?'':'en'}.</p></section>`; if(pd.session_status==='host_review')return `<section class="flat-section review-banner"><h2>Controle door host nodig</h2><p>${rejectCount} spelers hebben de sessie afgekeurd.</p>${host?'<button class="btn primary" data-resolve-session>Gecontroleerd en definitief maken</button>':'<span class="badge yellow">Wachten op host</span>'}</section>`; const participated=attendance.some(a=>a.user_id===current().id); return `<section class="flat-section review-banner"><h2>Beoordeel de hele speeldag</h2><p>Controleer alle wedstrijden en keur de sessie in één keer goed of af.</p>${participated&&!myReview?'<div class="action-row"><button class="btn primary" data-review="approve">Alles klopt</button><button class="btn danger" data-review="reject">Er klopt iets niet</button></div>':myReview?`<span class="badge ${myReview.decision==='approve'?'green':'yellow'}">Jouw keuze: ${myReview.decision==='approve'?'goedgekeurd':'afgekeurd'}</span>`:'<p class="muted">Alleen deelnemers kunnen beoordelen.</p>'}</section>`; }
   function renderRanking(){
@@ -698,6 +728,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.17.2',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3172')){sessionStorage.setItem('wepadel-sw-3172','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.18.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3180')){sessionStorage.setItem('wepadel-sw-3180','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();

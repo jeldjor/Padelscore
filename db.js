@@ -507,7 +507,7 @@
       court_number: Number(input.court_number),
       blue_player_1: ids[0], blue_player_2: ids[1],
       red_player_1: ids[2], red_player_2: ids[3],
-      status: 'active',
+      status: 'scheduled',
       started_at: null,
       score_state: PadelScoring.freshScore(),
       blue_games: 0, red_games: 0,
@@ -622,7 +622,7 @@
     if (playday.date !== localDateISO()) throw new Error('Wedstrijden kunnen pas op de speeldag worden gemaakt.');
     if (!Array.isArray(ids) || ids.length !== 4 || new Set(ids).size !== 4) throw new Error('Er zijn precies vier verschillende spelers nodig.');
     const [a,b,c,d]=ids;
-    const rows=[[a,b,c,d],[a,c,b,d],[a,d,b,c]].map(x=>({playday_id:playdayId,court_number:Number(courtNumber),blue_player_1:x[0],blue_player_2:x[1],red_player_1:x[2],red_player_2:x[3],status:'active',started_at:null,score_state:PadelScoring.freshScore(),blue_games:0,red_games:0,set_completed:false,timed_out:false,winner_team:null}));
+    const rows=[[a,b,c,d],[a,c,b,d],[a,d,b,c]].map(x=>({playday_id:playdayId,court_number:Number(courtNumber),blue_player_1:x[0],blue_player_2:x[1],red_player_1:x[2],red_player_2:x[3],status:'scheduled',started_at:null,score_state:PadelScoring.freshScore(),blue_games:0,red_games:0,set_completed:false,timed_out:false,winner_team:null}));
     const { error } = await client.from('matches').insert(rows);
     if (error) fail(error);
     return loadAll();
