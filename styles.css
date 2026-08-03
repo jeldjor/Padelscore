@@ -868,3 +868,12 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
     font-size:11px!important;
   }
 }
+
+/* WEPADEL 3.17.1 — tennisbal altijd zichtbaar boven kalenderinhoud */
+.day.court-complete{
+  overflow:visible!important;
+}
+.day .calendar-tennis-ball{
+  z-index:3!important;
+  display:block!important;
+}

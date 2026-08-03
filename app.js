@@ -218,7 +218,7 @@
   function rsvpStatus(playdayId){
     const me=current();
     if(state.pendingRsvp?.playdayId===playdayId) return state.pendingRsvp.response;
-    const mine=DB.listRsvps(playdayId).find(r=>r.user_id===me.id);
+    const mine=DB.listRsvps(playdayId).find(r=>String(r.user_id)===String(me.id));
     const override=state.rsvpOverrides[playdayId];
     if(override){
       if(mine?.response===override) delete state.rsvpOverrides[playdayId];
@@ -282,7 +282,8 @@
       const participation=arr.length?(response==='playing'?'rsvp-playing':response==='not_playing'?'rsvp-not-playing':'rsvp-open'):'';
       const cls=['day',date===todayISO()?'today':'',date===state.selectedCalendarDate?'selected':'',arr.length?'playday':'',participation].filter(Boolean).join(' ');
       const label=arr.length?(response==='playing'?'Speeldag, je doet mee':response==='not_playing'?'Speeldag, je kunt niet':'Open speeldag, nog niet gereageerd'):'Geen speeldag';
-      const courtComplete=Boolean(arr[0]&&response==='playing'&&currentUserCourtComplete(arr[0].id));
+      const completedPlayday=arr.find(pd=>rsvpStatus(pd.id)==='playing'&&currentUserCourtComplete(pd.id));
+      const courtComplete=Boolean(completedPlayday);
       cells+=`<button class="${cls}${courtComplete?' court-complete':''}" data-date="${date}" ${arr[0]?`data-pd="${arr[0].id}"`:''} aria-label="${d} ${esc(label)}${courtComplete?', jouw baan is compleet':''}"><span>${d}</span>${courtComplete?'<i class="calendar-tennis-ball" aria-hidden="true"></i>':''}</button>`;
     }
     const total=Math.ceil((offset+days)/7)*7;
@@ -697,6 +698,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.17.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3170')){sessionStorage.setItem('wepadel-sw-3170','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.17.1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3171')){sessionStorage.setItem('wepadel-sw-3171','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();

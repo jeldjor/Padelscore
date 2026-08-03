@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.admin-users]
 verify_jwt = true
+
+[functions.push-notifications]
+verify_jwt = false
