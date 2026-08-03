@@ -73,7 +73,8 @@
     status: input.status || 'planned',
     duration_minutes: input.duration_minutes ? Math.max(1, Number(input.duration_minutes)) : null,
     cost_per_player: input.cost_per_player ?? null,
-    tikkie_url: input.tikkie_url || ''
+    tikkie_url: input.tikkie_url || '',
+    live_scoring_enabled: input.live_scoring_enabled !== false
   });
 
   async function callFunction(name, body, authenticated = true) {
@@ -463,15 +464,12 @@
 
   async function createMatch(input) {
     const playday = cache.playdays.find(p => p.id === input.playday_id);
-    if (!canHost(playday)) throw new Error('Alleen de host kan wedstrijden maken.');
+    if (!canHost(playday)) throw new Error('Alleen de host of beheerder kan wedstrijden maken.');
+    if (playday.date !== localDateISO()) throw new Error('Wedstrijden kunnen pas op de speeldag worden gemaakt.');
     const ids = [input.blue_player_1,input.blue_player_2,input.red_player_1,input.red_player_2];
     if (new Set(ids).size !== 4 || ids.some(x => !x)) throw new Error('Kies vier verschillende spelers.');
     if (cache.matches.some(m => m.playday_id === playday.id && m.court_number === Number(input.court_number) && m.status === 'active' && !m.deleted_at)) {
       throw new Error('Op deze baan is al een wedstrijd bezig.');
-    }
-    for (const id of ids) {
-      const a = cache.attendance.find(x => x.playday_id === playday.id && x.user_id === id);
-      if (!a || a.status !== 'ready') throw new Error('Alle gekozen spelers moeten READY zijn.');
     }
     const row = {
       playday_id: playday.id,
@@ -485,12 +483,6 @@
     };
     const inserted = await client.from('matches').insert(row).select().single();
     if (inserted.error) fail(inserted.error);
-    const attendanceUpdate = await client.from('attendance').update({ status: 'playing' })
-      .eq('playday_id', playday.id).in('user_id', ids);
-    if (attendanceUpdate.error) {
-      await client.from('matches').delete().eq('id', inserted.data.id);
-      fail(attendanceUpdate.error);
-    }
     await client.from('playdays').update({ session_status: 'open' }).eq('id', playday.id);
     return loadAll();
   }
@@ -531,8 +523,6 @@
     const playday = match && cache.playdays.find(p => p.id === match.playday_id);
     if (!match || !canHost(playday)) throw new Error('Geen toegang tot deze wedstrijd.');
     Object.assign(match, payload, { status: 'finished', ended_at: new Date().toISOString() });
-    const ids = [match.blue_player_1,match.blue_player_2,match.red_player_1,match.red_player_2];
-    cache.attendance.filter(a => a.playday_id === match.playday_id && ids.includes(a.user_id)).forEach(a => a.status = 'ready');
     emit();
     return enqueueMatch(id, async () => {
       const matchUpdate = await client.from('matches').update({
@@ -546,10 +536,37 @@
         ended_at: new Date().toISOString()
       }).eq('id', id);
       if (matchUpdate.error) fail(matchUpdate.error);
-      const attendanceUpdate = await client.from('attendance').update({ status: 'ready' })
-        .eq('playday_id', match.playday_id).in('user_id', ids);
-      if (attendanceUpdate.error) fail(attendanceUpdate.error);
       return loadAll();
+    });
+  }
+
+  async function setLiveScoring(playdayId, enabled) {
+    const playday = cache.playdays.find(p => p.id === playdayId);
+    if (!playday || !canHost(playday)) throw new Error('Alleen de host of beheerder kan live score wijzigen.');
+    if (playday.date !== localDateISO()) throw new Error('Live score kan alleen op de speeldag worden gewijzigd.');
+    const value = Boolean(enabled);
+    const activeIds = cache.matches.filter(m => m.playday_id === playdayId && m.status === 'active' && !m.deleted_at).map(m => m.id);
+    if (activeIds.length) {
+      const reset = PadelScoring.freshScore();
+      const resetResult = await client.from('matches').update({ score_state: reset, blue_games: 0, red_games: 0 }).in('id', activeIds);
+      if (resetResult.error) fail(resetResult.error);
+    }
+    const { error } = await client.from('playdays').update({ live_scoring_enabled: value }).eq('id', playdayId);
+    if (error) fail(error);
+    return loadAll();
+  }
+
+  async function finishMatchManual(id, blueGames, redGames) {
+    const blue = Math.max(0, Number(blueGames) || 0);
+    const red = Math.max(0, Number(redGames) || 0);
+    if (blue === red) throw new Error('De einduitslag kan niet gelijk zijn.');
+    return finishMatch(id, {
+      blue_games: blue,
+      red_games: red,
+      point_snapshot: null,
+      set_completed: true,
+      timed_out: false,
+      winner_team: blue > red ? 'blue' : 'red'
     });
   }
 
@@ -608,7 +625,7 @@
     listUsers, createUser, approveUser, rejectUser, updateUser, saveAvatar, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
     listPlaydays, getPlayday, upsertPlayday, deletePlayday,
     setRsvp, listRsvps, listSlots, setSlotPaid, enterLobby, setReady, listAttendance, setAttendance,
-    listMatches, createMatch, updateMatchScore, finishMatch, deleteMatch,
+    listMatches, createMatch, updateMatchScore, finishMatch, finishMatchManual, setLiveScoring, deleteMatch,
     endSession, reviewSession, resolveSession, listReviews,
     refresh: loadAll
   };
