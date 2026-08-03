@@ -5,7 +5,7 @@ window.PADEL_CONFIG = {
   loginFunctionName: 'username-login',
   registerFunctionName: 'self-register',
   competitionName: 'WEPADEL',
-  appVersion: '3.14.0',
+  appVersion: '3.15.0',
   pushFunctionName: 'push-notifications',
   vapidPublicKey: 'BD-iUfWDgbszfJVSqaOiAWu4PvepCCBehn5TWjluAju9Rk8FQ-EmROnq9vWHsfMxz_C9KwQlkTODZ1bkt5F--sc'
 };

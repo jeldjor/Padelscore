@@ -1,5 +1,5 @@
-const CACHE='wepadel-v3.14.0-no-api-cache';
-const CORE=['./','index.html','styles.css?v=3.14.0','config.js?v=3.14.0','scoring.js?v=3.14.0','db.js?v=3.14.0','app.js?v=3.14.0','manifest.json','icons/wepadel-icon-192-v314.png','icons/wepadel-icon-512-v314.png','icons/wepadel-maskable-192-v314.png','icons/wepadel-maskable-512-v314.png','icons/wepadel-apple-touch-v314.png','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-192.png','icons/icon-maskable-512.png'];
+const CACHE='wepadel-v3.15.0-no-api-cache';
+const CORE=['./','index.html','styles.css?v=3.15.0','config.js?v=3.15.0','scoring.js?v=3.15.0','db.js?v=3.15.0','app.js?v=3.15.0','manifest.json','icons/wepadel-icon-192-v314.png','icons/wepadel-icon-512-v314.png','icons/wepadel-maskable-192-v314.png','icons/wepadel-maskable-512-v314.png','icons/wepadel-apple-touch-v314.png','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-192.png','icons/icon-maskable-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('message',event=>{ if(event.data==='SKIP_WAITING') self.skipWaiting(); });

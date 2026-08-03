@@ -319,6 +319,15 @@
     return current();
   }
 
+  async function changeUsername(username) {
+    requireUser();
+    const value = String(username || '').trim().toLowerCase();
+    if (!/^[a-z0-9._-]{3,30}$/.test(value)) throw new Error('Gebruik 3–30 letters, cijfers, punten, streepjes of underscores.');
+    await callFunction(cfg.adminFunctionName || 'admin-users', { action: 'change_own_username', username: value });
+    await loadAll();
+    return current();
+  }
+
   async function changePassword(oldPassword, newPassword) {
     requireUser();
     const result = await callFunction(cfg.adminFunctionName || 'admin-users', {
@@ -718,7 +727,7 @@
 
   window.PadelDB = {
     mode: 'online', client, init, login, register, logout, current, isAdmin, canHost,
-    listUsers, createUser, approveUser, rejectUser, updateUser, saveAvatar, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
+    listUsers, createUser, approveUser, rejectUser, updateUser, saveAvatar, changeUsername, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
     listPlaydays, getPlayday, upsertPlayday, deletePlayday,
     setRsvp, listRsvps, listSlots, setSlotPaid, adminAssignPlaydayPlayer, adminRemovePlaydayPlayer, enterLobby, setReady, listAttendance, setAttendance,
     listMatches, createMatch, createRoundRobinMatches, startMatch, updateMatchScore, finishMatch, finishMatchManual, setLiveScoring, deleteMatch,

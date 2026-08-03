@@ -111,6 +111,51 @@ Deno.serve(async (req) => {
     return json({ ok: true, avatar_id: avatarId });
   }
 
+  if (body.action === 'change_own_username') {
+    const username = String(body.username || '').trim().toLowerCase();
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
+      return json({ error: 'Gebruik 3–30 letters, cijfers, punten, streepjes of underscores.' }, 400);
+    }
+
+    const profileRes = await fetch(`${url}/rest/v1/profiles?id=eq.${me.id}&select=username,username_changed_at&limit=1`, { headers: adminHeaders });
+    const profiles = await profileRes.json().catch(() => []);
+    const profile = profiles?.[0];
+    if (!profileRes.ok || !profile) return json({ error: 'Profiel niet gevonden.' }, 404);
+    if (String(profile.username || '').toLowerCase() === username) return json({ error: 'Dit is al je huidige gebruikersnaam.' }, 400);
+
+    if (profile.username_changed_at) {
+      const next = new Date(profile.username_changed_at);
+      next.setUTCMonth(next.getUTCMonth() + 6);
+      if (next.getTime() > Date.now()) {
+        return json({ error: `Je kunt je gebruikersnaam opnieuw wijzigen vanaf ${next.toLocaleDateString('nl-NL')}.`, next_change_at: next.toISOString() }, 409);
+      }
+    }
+
+    const duplicateRes = await fetch(`${url}/rest/v1/profiles?username=eq.${encodeURIComponent(username)}&id=neq.${me.id}&select=id&limit=1`, { headers: adminHeaders });
+    const duplicates = await duplicateRes.json().catch(() => []);
+    if (!duplicateRes.ok) return json({ error: 'Gebruikersnaam controleren is mislukt.' }, duplicateRes.status);
+    if (duplicates.length) return json({ error: 'Deze gebruikersnaam is al in gebruik.' }, 409);
+
+    const newEmail = `${username}@padelscore.local`;
+    const appMetadata = { ...(me.app_metadata || {}), username };
+    const authUpdate = await fetch(`${url}/auth/v1/admin/users/${me.id}`, {
+      method: 'PUT', headers: adminHeaders,
+      body: JSON.stringify({ email: newEmail, email_confirm: true, app_metadata: appMetadata }),
+    });
+    if (!authUpdate.ok) return json({ error: 'Gebruikersnaam wijzigen is mislukt.' }, authUpdate.status);
+
+    const changedAt = new Date().toISOString();
+    const profileUpdate = await fetch(`${url}/rest/v1/profiles?id=eq.${me.id}`, {
+      method: 'PATCH', headers: { ...adminHeaders, Prefer: 'return=representation' },
+      body: JSON.stringify({ username, username_changed_at: changedAt }),
+    });
+    const updated = await profileUpdate.json().catch(() => []);
+    if (!profileUpdate.ok || updated?.[0]?.username !== username) {
+      return json({ error: 'Het loginaccount is aangepast, maar het profiel kon niet worden bijgewerkt. Neem contact op met de beheerder.' }, 500);
+    }
+    return json({ ok: true, username, username_changed_at: changedAt });
+  }
+
   if (me?.app_metadata?.role !== 'admin') return json({ error: 'Admin required' }, 403);
 
   if (body.action === 'update_registration_code') {
