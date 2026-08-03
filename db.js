@@ -692,6 +692,30 @@
     return loadAll();
   }
 
+  async function savePushSubscription(subscription) {
+    const me = requireUser();
+    const json = subscription?.toJSON ? subscription.toJSON() : subscription;
+    if (!json?.endpoint || !json?.keys?.p256dh || !json?.keys?.auth) throw new Error('Ongeldig meldingenabonnement.');
+    const { error } = await client.from('push_subscriptions').upsert({
+      user_id: me.id, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth,
+      user_agent: navigator.userAgent, last_seen_at: new Date().toISOString()
+    }, { onConflict: 'endpoint' });
+    if (error) fail(error);
+    return true;
+  }
+  async function removePushSubscription(endpoint) {
+    const me = requireUser();
+    if (!endpoint) return true;
+    const { error } = await client.from('push_subscriptions').delete().eq('user_id', me.id).eq('endpoint', endpoint);
+    if (error) fail(error);
+    return true;
+  }
+  async function syncNotifications() {
+    requireUser();
+    try { return await callFunction(cfg.pushFunctionName || 'push-notifications', { action: 'sync' }); }
+    catch (error) { console.warn('Meldingen synchroniseren mislukt', error); return null; }
+  }
+
   window.PadelDB = {
     mode: 'online', client, init, login, register, logout, current, isAdmin, canHost,
     listUsers, createUser, approveUser, rejectUser, updateUser, saveAvatar, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
@@ -700,6 +724,6 @@
     listMatches, createMatch, createRoundRobinMatches, startMatch, updateMatchScore, finishMatch, finishMatchManual, setLiveScoring, deleteMatch,
     listSwapRequests, requestSwap, respondSwap, resetStatistics, fullReset,
     endSession, reviewSession, resolveSession, listReviews,
-    refresh: loadAll
+    refresh: loadAll, savePushSubscription, removePushSubscription, syncNotifications
   };
 })();

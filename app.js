@@ -19,6 +19,7 @@
   const fmtTime = value => value ? String(value).slice(0,5) : '--:--';
   const nowMs = () => Date.now();
 
+  let deferredInstallPrompt=null; let notificationSyncTimer=null;
   const state = { swapPopupShown:false, dashboardPaidPage:0, dashboardActionPage:0, page:'dashboard', year:new Date().getFullYear(), month:new Date().getMonth(), playdayView:'calendar', playdayFilter:'all', playdayList:true, selectedCalendarDate:null, playdayPage:0, historyPage:0, adminPage:0, selectedPlaydayId:null, pendingRsvp:null, rsvpOverrides:{}, activeMatchId:null, scoreboardMatchId:null, wakeLock:null, timer:null, controlsTimer:null, recognition:null, adminTab:'requests', scoreboardReadOnly:false };
 
   function toast(message, error=false){ const el=$('#toast'); el.textContent=message; el.className=`toast show${error?' error':''}`; clearTimeout(el._t); el._t=setTimeout(()=>el.className='toast',2600); }
@@ -96,7 +97,63 @@
     return {...row,losses:Math.max(0,row.played-row.wins),recent};
   }
 
-  function showApp(){ $('#postLoginSplash').classList.add('hidden'); $('#postLoginSplash').setAttribute('aria-hidden','true'); $('#loginScreen').classList.add('hidden'); $('#appShell').classList.remove('hidden'); $('#accountNavLabel').textContent=isAdmin()?'Beheer':'Account'; if(current()?.must_change_password) openPasswordModal(true); render(); setTimeout(()=>{if(pendingSwapForMe()&&!state.swapPopupShown){state.swapPopupShown=true;openPendingSwap();}},250); }
+  function isStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
+  function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+  function isAndroid(){ return /android/i.test(navigator.userAgent); }
+  function actionCount(){
+    const me=current(); if(!me)return 0; const today=todayISO();
+    const unpaid=DB.listPlaydays().filter(p=>p.date>=today&&p.status!=='cancelled').filter(p=>{
+      const slot=playdaySlots(p.id).find(s=>s.user_id===me.id); if(!slot||slot.paid)return false;
+      return playdaySlots(p.id).filter(s=>s.court_number===slot.court_number&&s.user_id).length===4;
+    }).length;
+    return unpaid+(pendingSwapForMe()?1:0);
+  }
+  async function updateActionBadges(){
+    const count=actionCount(), badge=$('#notificationNavBadge');
+    if(badge){badge.textContent=String(count);badge.classList.toggle('hidden',count<1);}
+    try{if('setAppBadge'in navigator){if(count>0)await navigator.setAppBadge(count);else await navigator.clearAppBadge();}}catch{}
+  }
+  function urlBase64ToUint8Array(value){const padding='='.repeat((4-value.length%4)%4),base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/'),raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
+  async function enableNotifications(){
+    if(!('Notification'in window)||!('serviceWorker'in navigator)||!('PushManager'in window))throw new Error('Pushmeldingen worden op dit apparaat niet ondersteund.');
+    if(isIOS()&&!isStandalone())throw new Error('Zet WEPADEL eerst op je beginscherm en open daarna de app via het icoon.');
+    const permission=await Notification.requestPermission(); if(permission!=='granted')throw new Error('Meldingen zijn niet toegestaan. Je kunt dit wijzigen in de instellingen van je telefoon.');
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(window.PADEL_CONFIG.vapidPublicKey)});
+    await DB.savePushSubscription(sub); localStorage.setItem('wepadel-notifications-enabled','1'); localStorage.removeItem('wepadel-notification-later');
+    await DB.syncNotifications(); await updateActionBadges(); return true;
+  }
+  async function disableNotifications(){
+    const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
+    if(sub){await DB.removePushSubscription(sub.endpoint);await sub.unsubscribe();}
+    localStorage.removeItem('wepadel-notifications-enabled'); return true;
+  }
+  function openNotificationSettings(){
+    const permission=('Notification'in window)?Notification.permission:'unsupported';
+    modal('Meldingen',`<div class="onboarding-card"><div class="onboarding-icon">🔔</div><h3>${permission==='granted'?'Meldingen staan aan':'Blijf op de hoogte'}</h3><p>${permission==='granted'?'Je krijgt meldingen over complete banen, openstaande betalingen en ruilverzoeken.':'Zet meldingen aan zodat je altijd op de hoogte bent en blijft van je speeldagen.'}</p>${permission==='granted'?'<button class="btn danger full" id="disableNotifications">Meldingen uitzetten</button>':'<button class="btn primary full" id="enableNotifications">Meldingen aanzetten</button>'}</div>`,()=>{
+      $('#enableNotifications')?.addEventListener('click',async()=>{try{await enableNotifications();closeModal();toast('Meldingen staan aan');render();}catch(e){toast(e.message,true);}});
+      $('#disableNotifications')?.addEventListener('click',async()=>{try{await disableNotifications();closeModal();toast('Meldingen zijn uitgezet');render();}catch(e){toast(e.message,true);}});
+    });
+  }
+  function showInstallOnboarding(){
+    if(isStandalone()||localStorage.getItem('wepadel-install-dismissed')==='1')return false;
+    if(isIOS()){
+      modal('Installeer WEPADEL als app','<div class="onboarding-card"><div class="onboarding-icon">📲</div><h3>Zet WEPADEL op je beginscherm</h3><ol><li>Tik onderin Safari op <b>Deel</b>.</li><li>Kies <b>Zet op beginscherm</b>.</li><li>Tik op <b>Voeg toe</b>.</li></ol><p class="muted">Open WEPADEL daarna via het app-icoon om meldingen te kunnen ontvangen.</p><button class="btn primary full" data-close-modal>Begrepen</button><button class="text-button" id="dismissInstall">Niet meer tonen</button></div>',()=>{$('#dismissInstall').onclick=()=>{localStorage.setItem('wepadel-install-dismissed','1');closeModal();};});return true;
+    }
+    if(isAndroid()){
+      modal('Installeer WEPADEL als app',`<div class="onboarding-card"><div class="onboarding-icon">📲</div><h3>WEPADEL op je beginscherm</h3><p>Installeer de app voor volledig scherm, meldingen en een badge op het icoon.</p>${deferredInstallPrompt?'<button class="btn primary full" id="installAppNow">WEPADEL installeren</button>':'<ol><li>Tik rechtsboven op <b>⋮</b>.</li><li>Kies <b>App installeren</b> of <b>Toevoegen aan startscherm</b>.</li><li>Bevestig.</li></ol><button class="btn primary full" data-close-modal>Begrepen</button>'}<button class="text-button" id="dismissInstall">Niet meer tonen</button></div>`,()=>{$('#installAppNow')?.addEventListener('click',async()=>{deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;closeModal();});$('#dismissInstall').onclick=()=>{localStorage.setItem('wepadel-install-dismissed','1');closeModal();};});return true;
+    }
+    return false;
+  }
+  function maybeShowNotificationOnboarding(){
+    if(!isStandalone()||!('Notification'in window)||Notification.permission==='granted'||Notification.permission==='denied')return;
+    const later=Number(localStorage.getItem('wepadel-notification-later')||0); if(later&&Date.now()-later<3*86400000)return;
+    modal('Blijf op de hoogte van je speeldagen','<div class="onboarding-card"><div class="onboarding-icon">🔔</div><h3>Zet meldingen aan</h3><p>Zet meldingen aan zodat je altijd op de hoogte bent en blijft van de speeldagen.</p><ul><li>Je baan is compleet</li><li>Een betaling staat nog open</li><li>Je ontvangt een ruilverzoek</li></ul><button class="btn primary full" id="onboardingEnableNotifications">Meldingen aanzetten</button><button class="btn ghost full" id="onboardingLater">Later</button></div>',()=>{$('#onboardingEnableNotifications').onclick=async()=>{try{await enableNotifications();closeModal();toast('Meldingen staan aan');render();}catch(e){toast(e.message,true);}};$('#onboardingLater').onclick=()=>{localStorage.setItem('wepadel-notification-later',String(Date.now()));closeModal();};});
+  }
+  function scheduleNotificationSync(){clearTimeout(notificationSyncTimer);notificationSyncTimer=setTimeout(()=>DB.syncNotifications?.(),700);}
+  function runOnboarding(){setTimeout(()=>{if(!showInstallOnboarding())maybeShowNotificationOnboarding();},350);}
+  function showApp(){ $('#postLoginSplash').classList.add('hidden'); $('#postLoginSplash').setAttribute('aria-hidden','true'); $('#loginScreen').classList.add('hidden'); $('#appShell').classList.remove('hidden'); $('#accountNavLabel').textContent=isAdmin()?'Beheer':'Account'; if(current()?.must_change_password) openPasswordModal(true); render(); updateActionBadges(); scheduleNotificationSync(); runOnboarding(); setTimeout(()=>{if(pendingSwapForMe()&&!state.swapPopupShown){state.swapPopupShown=true;openPendingSwap();}},250); }
   function showLogin(){ $('#postLoginSplash').classList.add('hidden'); $('#appShell').classList.add('hidden'); $('#loginScreen').classList.remove('hidden'); }
   async function showPostLoginSplash(){
     $('#loginScreen').classList.add('hidden');
@@ -175,7 +232,7 @@
     const completeDays=pds.filter(p=>p.date>=today&&myIds.has(p.id)).map(p=>({p,slot:playdaySlots(p.id).find(s=>s.user_id===me.id)})).filter(x=>x.slot&&playdaySlots(x.p.id).filter(s=>s.court_number===x.slot.court_number&&s.user_id).length===4);
     const paidPage=paged(completeDays.filter(x=>x.slot.paid).map(x=>x.p),'dashboardPaidPage',4);
     const actionPage=paged(completeDays.filter(x=>!x.slot.paid).map(x=>x.p),'dashboardActionPage',4);
-    return `<div class="dashboard-greeting"><h1>Welkom, ${esc(firstName(me))}</h1>${avatarMarkup(me)}</div>${pendingSwapForMe()?`<button class="swap-alert" data-open-swap-request><strong>Ruilverzoek ontvangen</strong><span>Bekijk en reageer</span></button>`:''}
+    return `<div class="dashboard-greeting"><h1>Welkom, ${esc(firstName(me))}</h1>${avatarMarkup(me)}</div>${('Notification'in window&&Notification.permission!=='granted')?'<button class="notification-off-banner" data-notification-settings><span>🔔</span><strong>Meldingen staan uit</strong><small>Zet ze aan om niets te missen</small></button>':''}${pendingSwapForMe()?`<button class="swap-alert" data-open-swap-request><strong>Ruilverzoek ontvangen</strong><span>Bekijk en reageer</span></button>`:''}
       <div class="stats-compact-grid dashboard-kpis flat-kpis">
         <section class="stat-compact icon ranking"><span>Ranking</span><strong>#${rank||'–'}</strong></section>
         <section class="stat-compact icon points"><span>Punten</span><strong>${mine.points}</strong></section>
@@ -312,7 +369,7 @@
     const me=current();
     return `${uiHeader('Account','')}
       <section class="account-compact"><div><strong class="avatar-name">${esc(me.display_name)}${avatarMarkup(me)}</strong><span>@${esc(me.username)} · speler</span></div></section>
-      <div class="account-actions"><button class="open-action" data-change-avatar><span>Avatar wijzigen</span><b>›</b></button><button class="open-action" data-change-password><span>Wachtwoord wijzigen</span><b>›</b></button><button class="open-action danger-text" data-logout><span>Uitloggen</span><b>›</b></button></div>`;
+      <div class="account-actions"><button class="open-action" data-notification-settings><span>Meldingen</span><b>›</b></button><button class="open-action" data-change-avatar><span>Avatar wijzigen</span><b>›</b></button><button class="open-action" data-change-password><span>Wachtwoord wijzigen</span><b>›</b></button><button class="open-action danger-text" data-logout><span>Uitloggen</span><b>›</b></button></div>`;
   }
   function renderAdmin(){
     if(!isAdmin())return '<section class="card empty-state">Geen toegang.</section>';
@@ -324,7 +381,7 @@
     const requestsPanel=`<section class="flat-section admin-panel"><div class="section-title"><h2>Nieuwe aanmeldingen</h2></div><div class="compact-admin-list">${requestsPage.rows.map(u=>`<article class="compact-admin-row"><div><strong class="avatar-name">${esc(u.display_name)}${avatarMarkup(u)}</strong><small>@${esc(u.username)} · wacht op goedkeuring</small></div><div class="admin-item-actions"><button class="btn small primary" data-approve-user="${u.id}">Goedkeuren</button><button class="btn small danger" data-reject-user="${u.id}">Afwijzen</button></div></article>`).join('')||'<div class="empty-state">Geen openstaande aanmeldingen.</div>'}</div>${pager(requestsPage,'adminPage')}</section>`;
     const playersPanel=`<section class="flat-section admin-panel"><div class="section-title admin-title"><h2>Spelers (${players.filter(u=>u.role==='player'&&u.active).length})</h2><button class="btn primary small" data-add-user>+ Speler</button></div><div class="compact-admin-list">${playersPage.rows.map(u=>`<article class="compact-admin-row player-admin-row"><div><strong class="avatar-name">${esc(u.display_name)}${avatarMarkup(u)} ${u.role==='admin'?'<span class="badge yellow">Beheerder</span>':''}</strong><small>@${esc(u.username)} · ${u.approval_status==='rejected'?'afgewezen':u.active?'actief':'geblokkeerd'}</small></div><div class="admin-item-actions">${u.role!=='admin'?`<button class="btn small ghost" data-edit-user="${u.id}">Bewerk</button><button class="btn small ghost" data-reset-user="${u.id}">Reset</button><button class="btn small ghost" data-block-user="${u.id}" data-active="${u.active?'false':'true'}">${u.active?'Blokkeer':'Activeer'}</button><button class="btn small danger" data-remove-user="${u.id}">Verwijder</button>`:''}</div></article>`).join('')}</div>${pager(playersPage,'adminPage')}</section>`;
     const playdaysPanel=`<section class="flat-section admin-panel"><div class="section-title admin-title"><h2>Speeldagen</h2><button class="btn primary small" data-add-pd>+ Speeldag</button></div><div class="compact-admin-list">${playdaysPage.rows.map(p=>`<article class="compact-admin-row playday-admin-row"><div>${fmtDayBadge(p.date)}</div><div class="playday-admin-main"><strong>${esc(playdayLocationText(p)||'Speeldag')}</strong><small>${esc([playdayTimeText(p),`host ${nameOf(p.host_id)}`].filter(Boolean).join(' · '))}</small></div>${tikkieAdminBadge(p)}<div class="admin-item-actions"><button class="btn small primary" data-admin-add-player-id="${p.id}">+ Speler</button><button class="btn small ghost" data-open-playday="${p.id}">Open</button><button class="btn small ghost" data-edit-pd-id="${p.id}">Wijzig</button><button class="btn small danger" data-delete-pd-id="${p.id}">Verwijder</button></div></article>`).join('')||'<div class="empty-state">Geen speeldagen.</div>'}</div>${pager(playdaysPage,'adminPage')}</section>`;
-    const settingsPanel=`<section class="flat-section admin-panel"><section class="account-compact"><div><strong class="avatar-name">${esc(current().display_name)}${avatarMarkup(current())}</strong><span>@${esc(current().username)} · beheerder</span></div></section><div class="account-actions"><button class="open-action" data-change-avatar><span>Avatar wijzigen</span><b>›</b></button></div><form id="registrationCodeForm" class="inline-setting"><div><strong>Competitiecode wijzigen</strong><small>Minimaal 6 tekens. Deel deze alleen met spelers.</small></div><input name="competition_code" minlength="6" placeholder="Nieuwe competitiecode" required><button class="btn primary small">Opslaan</button></form><div class="account-actions"><button class="open-action danger-text" data-reset-statistics><span>Alle statistieken resetten</span><b>›</b></button><button class="open-action danger-text" data-full-reset><span>Testgegevens wissen / Opnieuw beginnen</span><b>›</b></button><button class="open-action" data-change-password><span>Wachtwoord wijzigen</span><b>›</b></button><button class="open-action danger-text" data-logout><span>Uitloggen</span><b>›</b></button></div></section>`;
+    const settingsPanel=`<section class="flat-section admin-panel"><section class="account-compact"><div><strong class="avatar-name">${esc(current().display_name)}${avatarMarkup(current())}</strong><span>@${esc(current().username)} · beheerder</span></div></section><div class="account-actions"><button class="open-action" data-change-avatar><span>Avatar wijzigen</span><b>›</b></button></div><form id="registrationCodeForm" class="inline-setting"><div><strong>Competitiecode wijzigen</strong><small>Minimaal 6 tekens. Deel deze alleen met spelers.</small></div><input name="competition_code" minlength="6" placeholder="Nieuwe competitiecode" required><button class="btn primary small">Opslaan</button></form><div class="account-actions"><button class="open-action" data-notification-settings><span>Meldingen</span><b>›</b></button><button class="open-action danger-text" data-reset-statistics><span>Alle statistieken resetten</span><b>›</b></button><button class="open-action danger-text" data-full-reset><span>Testgegevens wissen / Opnieuw beginnen</span><b>›</b></button><button class="open-action" data-change-password><span>Wachtwoord wijzigen</span><b>›</b></button><button class="open-action danger-text" data-logout><span>Uitloggen</span><b>›</b></button></div></section>`;
     return `${uiHeader('Beheer','')}
       <div class="tabs admin-tabs luxe four-tabs"><button class="${state.adminTab==='requests'?'active':''}" data-admin-tab="requests">Aanmeldingen${pending.length?` <b>${pending.length}</b>`:''}</button><button class="${state.adminTab==='players'?'active':''}" data-admin-tab="players">Spelers</button><button class="${state.adminTab==='playdays'?'active':''}" data-admin-tab="playdays">Speeldagen</button><button class="${state.adminTab==='settings'?'active':''}" data-admin-tab="settings">Account</button></div>
       ${state.adminTab==='requests'?requestsPanel:state.adminTab==='players'?playersPanel:state.adminTab==='playdays'?playdaysPanel:settingsPanel}`;
@@ -376,6 +433,7 @@
     $$('[data-edit-pd-id]').forEach(b=>b.onclick=()=>openPlaydayForm(playdayById(b.dataset.editPdId)));
     $$('[data-delete-pd-id]').forEach(b=>b.onclick=()=>confirmAction('Speeldag verwijderen?','Alle deelnemers, wedstrijden, uitslagen en gekoppelde informatie worden definitief verwijderd.',()=>DB.deletePlayday(b.dataset.deletePdId)));
     $('[data-change-avatar]')?.addEventListener('click',()=>openAvatarForm());
+    $$('[data-notification-settings]').forEach(b=>b.addEventListener('click',openNotificationSettings));
     $('[data-reset-statistics]')?.addEventListener('click',()=>confirmAction('Alle statistieken resetten?','Alle wedstrijden en uitslagen worden definitief verwijderd. Iedereen staat daarna weer op 0.',()=>DB.resetStatistics()));
     $('[data-full-reset]')?.addEventListener('click',openFullReset);
     $('[data-change-password]')?.addEventListener('click',()=>openPasswordModal(false));
@@ -569,6 +627,8 @@
   function openProfile(){ const me=current();modal('Mijn profiel',`<div class="list"><div class="list-row"><div class="list-main"><strong class="avatar-name">${esc(me.display_name)}${avatarMarkup(me)}</strong><span>@${esc(me.username)} · ${me.role==='admin'?'beheerder':'speler'}</span></div></div></div><div class="action-row" style="margin-top:14px"><button class="btn ghost" id="changePw">Wachtwoord wijzigen</button><button class="btn danger" id="logoutBtn">Uitloggen</button></div>`,()=>{$('#changePw').onclick=()=>openPasswordModal(false);$('#logoutBtn').onclick=async()=>{await DB.logout();closeModal();showLogin();};}); }
 
   function bindGlobal(){
+    window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;});
+    window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;localStorage.setItem('wepadel-install-dismissed','1');setTimeout(maybeShowNotificationOnboarding,500);});
     $('#registerAvatarPicker').innerHTML=avatarPicker(1,'avatar_id','Kies je avatar');
     bindAvatarPickers($('#registerAvatarPicker'));
     $('#loginForm').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button[type=submit]');button.disabled=true;button.textContent='Inloggen…';try{await DB.login($('#loginUsername').value,$('#loginPassword').value);await showPostLoginSplash();}catch(err){toast(err.message,true);}finally{button.disabled=false;button.textContent='Inloggen';}};
@@ -585,10 +645,10 @@
     },true);
     $('#exitScoreboard').onclick=closeScoreboard; $('#xlBlueAdd').onclick=e=>{e.stopPropagation();point(state.scoreboardMatchId,'blue',true);scheduleControlsHide();}; $('#xlRedAdd').onclick=e=>{e.stopPropagation();point(state.scoreboardMatchId,'red',true);scheduleControlsHide();}; $('#xlUndo').onclick=e=>{e.stopPropagation();updateScore(state.scoreboardMatchId,S.undo(getMatch(state.scoreboardMatchId).score_state),true);scheduleControlsHide();}; $('#xlSpeak').onclick=e=>{e.stopPropagation();speakMatch(getMatch(state.scoreboardMatchId));scheduleControlsHide();}; $('#xlVoice').onclick=e=>{e.stopPropagation();state.recognition?stopVoice():startVoice();scheduleControlsHide();}; $('#xlServeToggle').onclick=e=>{e.stopPropagation();updateScore(state.scoreboardMatchId,S.switchServer(getMatch(state.scoreboardMatchId).score_state),true);scheduleControlsHide();}; $('#xlTimeOver').onclick=e=>{e.stopPropagation();finishTimeOver(state.scoreboardMatchId);}; $('#scoreboardOverlay').onclick=()=>scheduleControlsHide();
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.scoreboardMatchId)requestWakeLock();});
-    window.addEventListener('padelscore:data-changed',()=>{if(current()){render();if(state.scoreboardMatchId)updateScoreboard();}});
+    window.addEventListener('padelscore:data-changed',()=>{if(current()){render();updateActionBadges();scheduleNotificationSync();if(state.scoreboardMatchId)updateScoreboard();}});
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.12.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3120')){sessionStorage.setItem('wepadel-sw-3120','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.13.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3130')){sessionStorage.setItem('wepadel-sw-3130','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();
