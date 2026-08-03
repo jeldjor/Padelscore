@@ -714,3 +714,71 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   top:1px!important;
   right:14%!important;
 }
+
+/* WEPADEL 3.16.4 — alleen een schone bovenbanner, geen volledige achtergrond */
+.app-shell.padel-banner-active{
+  position:relative!important;
+  background:#020b09!important;
+}
+.app-shell.padel-banner-active::before{
+  content:""!important;
+  position:absolute!important;
+  z-index:0!important;
+  top:0!important;
+  left:50%!important;
+  width:min(100%,928px)!important;
+  height:220px!important;
+  transform:translateX(-50%)!important;
+  background:
+    linear-gradient(180deg,rgba(2,11,9,.12) 0%,rgba(2,11,9,.38) 58%,#020b09 100%),
+    url("padel-sfeerbanner-v3164.jpg") center/cover no-repeat!important;
+  pointer-events:none!important;
+}
+.app-shell.padel-banner-active .topbar{
+  position:relative!important;
+  z-index:2!important;
+  background:transparent!important;
+  border-bottom-color:transparent!important;
+  backdrop-filter:none!important;
+}
+.app-shell.padel-banner-active .main-content{
+  position:relative!important;
+  z-index:1!important;
+  padding-top:8px!important;
+}
+
+/* Geen groene/transparante vakken door de sfeerbanner */
+.app-shell.padel-banner-active .dashboard-kpis,
+.app-shell.padel-banner-active .dashboard-playdays,
+.app-shell.padel-banner-active .section-block,
+.app-shell.padel-banner-active .card,
+.app-shell.padel-banner-active .month{
+  backdrop-filter:none!important;
+}
+.app-shell.padel-banner-active .dashboard-playdays{
+  background:transparent!important;
+}
+.app-shell.padel-banner-active .dashboard-kpis{
+  background:transparent!important;
+}
+
+/* Onderste schermbalk weer rustig zwart/donkergroen, zonder groen net of groene vlakken */
+.bottom-nav{
+  isolation:auto!important;
+  overflow:hidden!important;
+  border:1px solid #29443c!important;
+  background:#061512!important;
+  box-shadow:0 -8px 24px rgba(0,0,0,.30)!important;
+}
+.bottom-nav::before,
+.bottom-nav::after{
+  content:none!important;
+  display:none!important;
+}
+.bottom-nav button{
+  background:transparent!important;
+  text-shadow:none!important;
+}
+.bottom-nav button.active::after{
+  box-shadow:none!important;
+}
