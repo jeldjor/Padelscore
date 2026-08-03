@@ -215,15 +215,17 @@
     const rows=occupied.map((slot,index)=>{
       const user=users.get(slot.user_id);
       const trailing=complete?slotPaymentMarkup(slot,admin):`<span class="court-position">Baan ${courtNumber} · ${index+1}/4</span>`;
-      return `<div class="signup-player-row"><strong class="avatar-name">${esc(user?.display_name||'Onbekend')}${avatarMarkup(user)}</strong>${slot.user_id===pd.host_id?'<span class="mini-pill">Host</span>':''}${trailing}</div>`;
+      const adminActions=admin?`<span class="signup-admin-actions"><button class="mini-admin-btn" data-manage-playday-player="${slot.user_id}" data-slot-court="${courtNumber}">Verplaats</button><button class="mini-admin-btn danger" data-remove-playday-player="${slot.user_id}">Verwijder</button></span>`:'';
+      return `<div class="signup-player-row"><strong class="avatar-name">${esc(user?.display_name||'Onbekend')}${avatarMarkup(user)}</strong>${slot.user_id===pd.host_id?'<span class="mini-pill">Host</span>':''}${trailing}${adminActions}</div>`;
     });
     courtSlots.filter(s=>!s.user_id&&s.paid).forEach(slot=>rows.push(`<div class="signup-player-row empty-paid"><strong>Open plek</strong><span class="mini-pill">Betaald bewaard</span>${admin?slotPaymentMarkup(slot,true):''}</div>`));
     return `<section class="signup-court ${complete?'complete-court':'incomplete-court'}" aria-label="Baan ${courtNumber}${complete?', compleet':''}"><div>${rows.join('')||'<div class="empty-state compact-empty">Nog geen spelers op deze baan.</div>'}</div></section>`;
   }
-  function renderReserveList(reserves,users){
+  function renderReserveList(reserves,users,admin=false){
     if(!reserves.length)return'';
-    return `<section class="reserve-list"><header><h3>Reservelijst</h3><span>${reserves.length} reserve${reserves.length===1?'':'s'}</span></header><div>${reserves.map((r,i)=>`<div class="signup-player-row"><b class="reserve-position">${i+1}</b><strong class="avatar-name">${esc(users.get(r.user_id)?.display_name||'Onbekend')}${avatarMarkup(users.get(r.user_id))}</strong><span class="mini-pill reserve">Plek ${i+1}</span></div>`).join('')}</div></section>`;
+    return `<section class="reserve-list"><header><h3>Reservelijst</h3><span>${reserves.length} reserve${reserves.length===1?'':'s'}</span></header><div>${reserves.map((r,i)=>`<div class="signup-player-row"><b class="reserve-position">${i+1}</b><strong class="avatar-name">${esc(users.get(r.user_id)?.display_name||'Onbekend')}${avatarMarkup(users.get(r.user_id))}</strong><span class="mini-pill reserve">Plek ${i+1}</span>${admin?`<span class="signup-admin-actions"><button class="mini-admin-btn" data-manage-playday-player="${r.user_id}" data-slot-court="reserve">Verplaats</button><button class="mini-admin-btn danger" data-remove-playday-player="${r.user_id}">Verwijder</button></span>`:''}</div>`).join('')}</div></section>`;
   }
+
   function renderPlayday(){
     if(state.playdayList){
       const pds=DB.listPlaydays().filter(p=>p.status!=='cancelled').sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.start_time||'').localeCompare(String(b.start_time||'')));
@@ -269,7 +271,7 @@
     return `<button class="detail-back" data-back-list>‹</button>${uiHeader(esc(fmtDate(pd.date)), '', '')}
       <div class="playday-meta-cards">${playdayTimeText(pd)?`<div class="meta-chip">◷ ${esc(playdayTimeText(pd))}</div>`:''}${pd.location_enabled===false?'':`<div class="meta-chip">⌖ ${esc(playdayLocationText(pd))}</div>`}<div class="meta-chip tikkie-meta">${tikkieMeta(pd)}</div></div>
       <section class="flat-section rsvp-section"><h2>Jouw status</h2><div class="choice-grid luxe-choices"><button class="choice ${selectedResponse==='playing'?'selected':''}" data-rsvp="playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✓</b><span>Ik speel mee</span></button>${mineCourtComplete?(outgoingSwapFor(pd.id)?`<button class="choice swap requested" disabled><b class="choice-mark">⇄</b><span>Ruilverzoek gedaan</span></button>`:`<button class="choice swap" data-request-swap><b class="choice-mark">⇄</b><span>Ruilen</span></button>`):`<button class="choice no ${selectedResponse==='not_playing'?'selected':''}" data-rsvp="not_playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✕</b><span>Ik kan niet</span></button>`}</div>${selectedResponse?`<p class="rsvp-current ${selectedResponse==='playing'?'yes':'no'}">${selectedResponse==='playing'?'✓ Je speelt mee':'✕ Je speelt niet mee'}</p>`:'<p class="rsvp-current open">Nog niet gekozen</p>'}</section>
-      <section class="flat-section signup-overview"><div class="section-title"><h2>Spelers (${all.length})</h2><span class="host-pill">Host: ${playerNameMarkup(pd.host_id)}</span></div><div class="signup-courts">${courtGroups}</div>${renderReserveList(reserves,users)}</section>
+      <section class="flat-section signup-overview"><div class="section-title signup-title"><h2>Spelers (${all.length})</h2><div class="signup-title-actions"><span class="host-pill">Host: ${playerNameMarkup(pd.host_id)}</span>${admin?'<button class="btn primary small" data-admin-add-playday-player>+ Speler</button>':''}</div></div><div class="signup-courts">${courtGroups}</div>${renderReserveList(reserves,users,admin)}</section>
       ${progressTitle?`<section class="flat-section progress-panel"><div class="progress-head"><div class="progress-icon">▣</div><div><strong>${progressTitle}</strong><span>${progressText}</span></div></div><div class="bar-track"><i style="width:${progressWidth}%"></i></div>${paymentAction}</section>`:''}
       ${readyButton}${renderReviewPanel(pd,attendance,reviews,myReview,host)}
       ${isAdmin()?`<section class="flat-section admin-actions"><button class="btn ghost" data-edit-pd>Speeldag wijzigen</button><button class="btn danger" data-delete-pd>Speeldag verwijderen</button></section>`:''}`;
@@ -341,6 +343,9 @@
     $('[data-request-swap]')?.addEventListener('click',openSwapRequest);
     $('[data-open-swap-request]')?.addEventListener('click',openPendingSwap);
     $$('[data-slot-paid]').forEach(b=>b.onclick=()=>run(()=>DB.setSlotPaid(b.dataset.slotPaid,b.dataset.paid==='true'),b.dataset.paid==='true'?'Betaling als betaald gemarkeerd':'Betaling teruggezet naar niet betaald'));
+    $('[data-admin-add-playday-player]')?.addEventListener('click',()=>openManagePlaydayPlayer());
+    $$('[data-manage-playday-player]').forEach(b=>b.onclick=()=>openManagePlaydayPlayer(b.dataset.managePlaydayPlayer,b.dataset.slotCourt));
+    $$('[data-remove-playday-player]').forEach(b=>b.onclick=()=>confirmAction('Speler van speeldag verwijderen?','De speler verdwijnt van de baan of reservelijst en krijgt de status Ik kan niet.',()=>DB.adminRemovePlaydayPlayer(state.selectedPlaydayId,b.dataset.removePlaydayPlayer)));
     $('[data-back-list]')?.addEventListener('click',()=>{state.playdayList=true;render();});
     $('[data-delete-pd]')?.addEventListener('click',()=>confirmAction('Speeldag verwijderen?','Alle deelnemers, wedstrijden, uitslagen en gekoppelde informatie worden definitief verwijderd.',()=>DB.deletePlayday(state.selectedPlaydayId)));
     $$('[data-month]').forEach(b=>b.onclick=()=>{state.month+=Number(b.dataset.month);state.selectedCalendarDate=null;if(state.month<0){state.month=11;state.year--;}if(state.month>11){state.month=0;state.year++;}render();});
@@ -413,9 +418,26 @@
       $('.modal-card')?.classList.add('playday-form-modal');
       const sync=()=>{ $('#timeFields').classList.toggle('disabled',!$('#timeEnabled').checked); $('#locationFields').classList.toggle('disabled',!$('#locationEnabled').checked); }; $('#timeEnabled').onchange=sync;$('#locationEnabled').onchange=sync;sync();
       $('#pdForm [name="date"]').onchange=e=>{const existing=DB.listPlaydays().find(item=>item.date===e.target.value);if(existing&&existing.id!==pd?.id){toast('Bestaande speeldag geopend');openPlaydayForm(existing);}};
+      const tikkieInput=$('#pdForm [name="tikkie_url"]');
+      const extractUrl=value=>{const match=String(value||'').match(/https?:\/\/[^\s<>"']+/i);return match?match[0].replace(/[),.;!?]+$/,''):String(value||'').trim();};
+      tikkieInput?.addEventListener('paste',event=>{const text=event.clipboardData?.getData('text')||'';const url=extractUrl(text);if(url&&url!==text.trim()){event.preventDefault();tikkieInput.value=url;toast('Alleen de Tikkie-link is geplakt');}});
+      tikkieInput?.addEventListener('change',()=>{tikkieInput.value=extractUrl(tikkieInput.value);});
       $('#pdForm').onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));const nextLink=String(f.tikkie_url||'').trim();const previousLink=String(pd?.tikkie_url||'').trim();const tikkieCreatedAt=!nextLink?null:(nextLink!==previousLink?todayISO():(pd?.tikkie_created_at||todayISO()));run(()=>DB.upsertPlayday({...f,tikkie_url:nextLink,tikkie_created_at:tikkieCreatedAt,id:pd?.id,court_count:Number(f.court_count),duration_minutes:f.duration_minutes?Number(f.duration_minutes):null,cost_per_player:pd?.cost_per_player??null,time_enabled:$('#timeEnabled').checked,location_enabled:$('#locationEnabled').checked}),'Speeldag opgeslagen');};
       $('#deletePd')?.addEventListener('click',()=>run(()=>DB.deletePlayday(pd.id),'Speeldag verwijderd'));
     });
+  }
+
+  function openManagePlaydayPlayer(userId='',currentPlacement=''){
+    const pd=selectedPlayday();
+    if(!pd||!isAdmin())return;
+    const assigned=new Set(playdaySlots(pd.id).filter(s=>s.user_id).map(s=>s.user_id));
+    const rsvpPlayers=new Set(DB.listRsvps(pd.id).filter(r=>r.response==='playing').map(r=>r.user_id));
+    const editing=Boolean(userId);
+    const candidates=DB.listUsers().filter(u=>u.active&&u.role!=='admin'&&(editing?u.id===userId:!assigned.has(u.id)&&!rsvpPlayers.has(u.id)));
+    if(!candidates.length){toast(editing?'Speler niet gevonden.':'Alle actieve spelers staan al op deze speeldag.',true);return;}
+    const selectedUser=userId||candidates[0].id;
+    const placementOptions=Array.from({length:pd.court_count},(_,i)=>`<option value="court:${i+1}" ${String(currentPlacement)===String(i+1)?'selected':''}>Vaste plek · Baan ${i+1}</option>`).join('')+`<option value="reserve" ${currentPlacement==='reserve'?'selected':''}>Reservelijst</option>`;
+    modal(editing?'Speler verplaatsen':'Speler toevoegen',`<form id="managePlaydayPlayerForm"><label>Speler<select name="user_id" ${editing?'disabled':''}>${candidates.map(u=>`<option value="${u.id}" ${u.id===selectedUser?'selected':''}>${esc(u.display_name)}</option>`).join('')}</select>${editing?`<input type="hidden" name="user_id" value="${selectedUser}">`:''}</label><label>Plaatsing<select name="placement">${placementOptions}</select></label><p class="muted">De speler krijgt automatisch de status Ik speel mee. Een vaste plek begint als Niet betaald.</p><button class="btn primary full" type="submit">${editing?'Verplaats speler':'Speler toevoegen'}</button></form>`,()=>{$('#managePlaydayPlayerForm').onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));const reserve=f.placement==='reserve';const court=reserve?null:Number(String(f.placement).split(':')[1]);run(()=>DB.adminAssignPlaydayPlayer(pd.id,f.user_id,reserve?'reserve':'court',court),editing?'Speler verplaatst':'Speler toegevoegd');};});
   }
 
   function openAddUser(){ modal('Speler aanmaken',`<form id="userForm"><label>Naam<input name="display_name" required></label><label>Gebruikersnaam<input name="username" autocapitalize="none" required></label><label>Tijdelijk wachtwoord<input name="password" type="password" minlength="8" required></label>${avatarPicker(1,'avatar_id','Kies avatar')}<p class="muted">Bij de eerste login moet de speler zelf een nieuw wachtwoord kiezen.</p><button class="btn primary full" type="submit">Speler toevoegen</button></form>`,()=>{bindAvatarPickers($('#userForm'));$('#userForm').onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));run(()=>DB.createUser(f),'Speler aangemaakt');};}); }
@@ -566,6 +588,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.10.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3100')){sessionStorage.setItem('wepadel-sw-3100','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.11.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3110')){sessionStorage.setItem('wepadel-sw-3110','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();

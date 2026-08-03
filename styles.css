@@ -46,7 +46,7 @@ body{background:radial-gradient(circle at 18% 0%,rgba(124,191,23,.16),transparen
 }
 
 /* --- v3.2.0 compact, open layout --- */
-html{background:#020a08}body{background:radial-gradient(circle at 50% 0,rgba(135,205,20,.08),transparent 26%),linear-gradient(180deg,#020b09,#03100d 48%,#020806);padding:0}
+html{background:#020a08}body{background:radial-gradient(circle at 50% 0,rgba(135,205,20,.08),transparent 26%),linear-gradient(180deg,#020b09,#03110d 48%,#020806);padding:0}
 .login-screen{min-height:100dvh;overflow:auto;display:grid;grid-template-rows:auto 1fr auto;align-items:center;justify-items:center;gap:18px;padding:max(28px,env(safe-area-inset-top)) 24px max(18px,env(safe-area-inset-bottom));background:radial-gradient(circle at 50% 5%,rgba(145,207,16,.12),transparent 30%),linear-gradient(180deg,#03110e,#020907)}
 .login-screen .court-lines{inset:62% -15% -35%;opacity:.24;pointer-events:none}.splash-brand{align-self:auto;z-index:1}.wepadel-logo{width:176px;height:164px;object-fit:contain;filter:none}.login-content{z-index:2;width:min(100%,420px);text-align:center;padding:0;background:none;border:0;box-shadow:none}.login-content h2{font-size:28px;margin:0 0 8px}.login-content>p{max-width:360px;margin:0 auto 18px;line-height:1.45}.login-content label{display:grid;text-align:center;gap:6px;margin:10px 0;color:#dbe6e1}.login-content input{height:48px;text-align:center;border:0;border-bottom:1px solid #557266;border-radius:0;background:rgba(4,20,16,.46);outline:none}.login-content input:focus{border-bottom-color:var(--green2);box-shadow:0 1px var(--green2)}.login-content .btn{margin-top:14px}.text-button{margin-top:16px;border:0;background:none;color:var(--green2);font-weight:800;padding:10px}.register-form .compact-fields{gap:10px}.register-form label{margin:7px 0}.register-form input{height:43px}.powered{z-index:2;margin:0;gap:7px}.powered span{font-size:10px;letter-spacing:3px;color:#a9b8b3}.powered img{width:178px;height:76px;object-fit:contain}
 .app-shell{padding-bottom:calc(88px + env(safe-area-inset-bottom))}.topbar{position:sticky;top:0;z-index:20;height:calc(98px + env(safe-area-inset-top));display:flex;justify-content:center;align-items:flex-end;padding:env(safe-area-inset-top) 16px 5px;background:linear-gradient(180deg,rgba(2,10,8,.99) 0%,rgba(2,10,8,.90) 76%,rgba(2,10,8,0));border:0}.topbar .icon-btn{position:absolute;left:16px;bottom:28px}.brand.compact{display:grid;place-items:center}.brand.compact img{width:96px;height:90px;object-fit:contain}.main-content{width:min(100%,860px);padding:4px 16px 32px}.ui-header{margin:0 0 18px;text-align:left}.ui-header-action{margin:0 0 10px}.ui-header-main{display:block}.ui-header h1{font-size:34px;line-height:1.05;margin:0}.ui-header p{margin:7px 0 0;font-size:14px;line-height:1.4;color:#91a69f}.ui-header-stick{display:none}.dashboard-hero{margin:0 0 10px}.dashboard-hero h2{font-size:42px}.hero-circle{display:none}
@@ -357,7 +357,7 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
 .destructive-reset-form button:disabled{opacity:.45;cursor:not-allowed}
 
 
-/* WEPADEL 3.10.0 - Tikkie-geldigheid en volledig scrolbaar beheer */
+/* WEPADEL 3.11.0 - Tikkie-geldigheid en volledig scrolbaar beheer */
 .main-content.page-account{overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:28px}
 .page-account .admin-panel{min-height:min-content}
 .playday-admin-row{grid-template-columns:auto minmax(120px,1fr) auto auto;align-items:center;gap:10px}
@@ -373,3 +373,7 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   .playday-admin-row .admin-item-actions{grid-column:1/-1;justify-content:flex-end;width:100%}
   .tikkie-admin-status{font-size:9px;padding:5px 7px}
 }
+
+
+/* v3.11.0 beheer speeldagspelers */
+.signup-title-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.signup-admin-actions{display:flex;gap:5px;align-items:center;margin-left:auto}.mini-admin-btn{border:1px solid rgba(166,237,12,.35);background:rgba(166,237,12,.08);color:#d8ff78;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:800;white-space:nowrap}.mini-admin-btn.danger{border-color:rgba(255,80,80,.45);background:rgba(255,60,60,.1);color:#ff8b8b}.signup-player-row{flex-wrap:wrap}.signup-player-row .payment-cell{margin-left:auto}@media(max-width:560px){.signup-title{align-items:flex-start}.signup-title-actions{width:100%;justify-content:space-between}.signup-admin-actions{width:100%;justify-content:flex-end}.mini-admin-btn{padding:4px 7px;font-size:10px}}

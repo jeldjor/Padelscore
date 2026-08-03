@@ -416,6 +416,20 @@
     return clone(data);
   }
 
+  async function adminAssignPlaydayPlayer(playdayId, userId, placement, courtNumber=null) {
+    requireAdmin();
+    const { error } = await client.rpc('admin_assign_playday_player', { p_playday_id: playdayId, p_user_id: userId, p_placement: placement, p_court_number: courtNumber });
+    if (error) fail(error);
+    return loadAll();
+  }
+
+  async function adminRemovePlaydayPlayer(playdayId, userId) {
+    requireAdmin();
+    const { error } = await client.rpc('admin_remove_playday_player', { p_playday_id: playdayId, p_user_id: userId });
+    if (error) fail(error);
+    return loadAll();
+  }
+
   async function setSlotPaid(slotId, paid) {
     requireAdmin();
     const slot = cache.slots.find(s => s.id === slotId);
@@ -681,7 +695,7 @@
     mode: 'online', client, init, login, register, logout, current, isAdmin, canHost,
     listUsers, createUser, approveUser, rejectUser, updateUser, saveAvatar, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
     listPlaydays, getPlayday, upsertPlayday, deletePlayday,
-    setRsvp, listRsvps, listSlots, setSlotPaid, enterLobby, setReady, listAttendance, setAttendance,
+    setRsvp, listRsvps, listSlots, setSlotPaid, adminAssignPlaydayPlayer, adminRemovePlaydayPlayer, enterLobby, setReady, listAttendance, setAttendance,
     listMatches, createMatch, createRoundRobinMatches, startMatch, updateMatchScore, finishMatch, finishMatchManual, setLiveScoring, deleteMatch,
     listSwapRequests, requestSwap, respondSwap, resetStatistics, fullReset,
     endSession, reviewSession, resolveSession, listReviews,
