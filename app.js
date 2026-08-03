@@ -264,6 +264,15 @@
       </section>`;
   }
 
+  function currentUserCourtComplete(playdayId){
+    const me=current();
+    if(!me)return false;
+    const slots=playdaySlots(playdayId);
+    const mine=slots.find(s=>String(s.user_id)===String(me.id));
+    if(!mine||!mine.court_number)return false;
+    return slots.filter(s=>Number(s.court_number)===Number(mine.court_number)&&s.user_id).length===4;
+  }
+
   function renderMonth(year,month,byDate){
     const start=new Date(year,month,1); const offset=(start.getDay()+6)%7; const days=new Date(year,month+1,0).getDate(); let cells='';
     const prevLast=new Date(year,month,0).getDate();
@@ -273,7 +282,8 @@
       const participation=arr.length?(response==='playing'?'rsvp-playing':response==='not_playing'?'rsvp-not-playing':'rsvp-open'):'';
       const cls=['day',date===todayISO()?'today':'',date===state.selectedCalendarDate?'selected':'',arr.length?'playday':'',participation].filter(Boolean).join(' ');
       const label=arr.length?(response==='playing'?'Speeldag, je doet mee':response==='not_playing'?'Speeldag, je kunt niet':'Open speeldag, nog niet gereageerd'):'Geen speeldag';
-      cells+=`<button class="${cls}" data-date="${date}" ${arr[0]?`data-pd="${arr[0].id}"`:''} aria-label="${d} ${esc(label)}"><span>${d}</span></button>`;
+      const courtComplete=Boolean(arr[0]&&response==='playing'&&currentUserCourtComplete(arr[0].id));
+      cells+=`<button class="${cls}${courtComplete?' court-complete':''}" data-date="${date}" ${arr[0]?`data-pd="${arr[0].id}"`:''} aria-label="${d} ${esc(label)}${courtComplete?', jouw baan is compleet':''}"><span>${d}</span>${courtComplete?'<i class="calendar-tennis-ball" aria-hidden="true"></i>':''}</button>`;
     }
     const total=Math.ceil((offset+days)/7)*7;
     for(let i=offset+days;i<total;i++){ cells+=`<button class="day other" disabled><span>${i-(offset+days)+1}</span></button>`; }
@@ -687,6 +697,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.16.4',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3164')){sessionStorage.setItem('wepadel-sw-3164','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.17.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3170')){sessionStorage.setItem('wepadel-sw-3170','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();
