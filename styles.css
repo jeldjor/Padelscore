@@ -407,3 +407,28 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   .dashboard-playdays .event-status-line{justify-content:flex-end;gap:4px}
   .dashboard-playdays .event-chevron{display:none}
 }
+
+/* WEPADEL 3.12.1 — dashboard speeldagen echt één compacte regel */
+.dashboard-playdays .event-list{display:grid;gap:0}
+.dashboard-playdays .event-row.luxe{min-height:44px;height:44px;padding:0;grid-template-columns:minmax(0,1fr) auto!important;border-bottom:1px solid rgba(94,124,114,.22)}
+.dashboard-playdays .event-open{height:44px;display:grid;grid-template-columns:72px minmax(0,1fr)!important;gap:8px!important;align-items:center}
+.dashboard-playdays .date-box{width:auto;height:auto;margin:0;display:flex;align-items:baseline;justify-content:flex-start;gap:4px;white-space:nowrap}
+.dashboard-playdays .date-box b,.dashboard-playdays .date-box small{font-size:9px;line-height:1}
+.dashboard-playdays .date-box strong{font-size:18px;line-height:1}
+.dashboard-playdays .event-main{display:flex;align-items:center;gap:7px;padding:0!important;min-width:0;white-space:nowrap;overflow:hidden}
+.dashboard-playdays .event-main b,.dashboard-playdays .event-main strong{display:inline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:1.1}
+.dashboard-playdays .event-main b{flex:0 0 auto;color:#b9c7c2}
+.dashboard-playdays .event-main strong{min-width:0}
+.dashboard-playdays .event-side{align-self:center;max-width:none!important}
+.dashboard-playdays .event-status-line{display:flex;flex-wrap:nowrap!important;gap:4px;max-width:none!important}
+.dashboard-playdays .event-status-line .court-occupancy,.dashboard-playdays .event-status-line .payment-summary,.dashboard-playdays .event-status-line .mini-tikkie{font-size:8px;padding:4px 6px}
+.dashboard-playdays .event-chevron{display:none!important}
+@media(max-width:480px){
+  .dashboard-playdays .event-row.luxe{height:42px;min-height:42px}
+  .dashboard-playdays .event-open{height:42px;grid-template-columns:62px minmax(0,1fr)!important;gap:5px!important}
+  .dashboard-playdays .date-box{gap:3px}
+  .dashboard-playdays .date-box strong{font-size:17px}
+  .dashboard-playdays .event-main{gap:5px}
+  .dashboard-playdays .event-main b,.dashboard-playdays .event-main strong{font-size:11px}
+  .dashboard-playdays .event-status-line .court-occupancy,.dashboard-playdays .event-status-line .payment-summary,.dashboard-playdays .event-status-line .mini-tikkie{font-size:7px;padding:4px 5px}
+}
