@@ -193,6 +193,7 @@
     const slots=playdaySlots(pd.id), reserves=reserveRsvps(pd.id), mineSlot=slots.find(s=>s.user_id===me.id), mineReserveIndex=reserves.findIndex(r=>r.user_id===me.id);
     const dayMatches=DB.listMatches(pd.id).filter(m=>!m.deleted_at), active=dayMatches.filter(m=>m.status==='active'), reviews=DB.listReviews(pd.id), myReview=reviews.find(r=>r.user_id===me.id), attendance=participants(pd.id);
     const nextCourtNeed=Math.max(0,4-reserves.length), today=isPlaydayToday(pd);
+    const courtGroups=Array.from({length:pd.court_count},(_,i)=>renderSignupCourt(pd,i+1,slots,users,admin)).join('');
     const mineCourtSlots=mineSlot?slots.filter(s=>s.court_number===mineSlot.court_number):[], mineCourtComplete=Boolean(mineSlot)&&mineCourtSlots.filter(s=>s.user_id).length===4;
     const readyButton=`<section class="flat-section match-lobby-card"><p class="lobby-intro">Op de speeldag staan hier de wedstrijden.</p><div class="section-title"><h2>Lobby</h2>${today&&active.length?'<span class="badge green">Live</span>':''}</div><button class="btn primary full ready-play-button" data-open-day-matches ${today?'':'disabled'}>Ready to play!</button>${today?'':'<small class="lobby-disabled-note">Beschikbaar op de dag van de speeldag.</small>'}</section>`;
     let progressTitle='',progressText='',progressWidth=0,paymentAction='';
@@ -466,6 +467,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.6.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-360')){sessionStorage.setItem('wepadel-sw-360','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.6.1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-361')){sessionStorage.setItem('wepadel-sw-361','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();
