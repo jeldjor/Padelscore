@@ -1,5 +1,5 @@
-const CACHE='wepadel-v3.13.0-no-api-cache';
-const CORE=['./','index.html','styles.css?v=3.13.0','config.js?v=3.13.0','scoring.js?v=3.13.0','db.js?v=3.13.0','app.js?v=3.13.0','manifest.json','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-192.png','icons/icon-maskable-512.png'];
+const CACHE='wepadel-v3.13.1-no-api-cache';
+const CORE=['./','index.html','styles.css?v=3.13.1','config.js?v=3.13.1','scoring.js?v=3.13.1','db.js?v=3.13.1','app.js?v=3.13.1','manifest.json','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-192.png','icons/icon-maskable-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('message',event=>{ if(event.data==='SKIP_WAITING') self.skipWaiting(); });

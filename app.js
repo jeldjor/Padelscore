@@ -137,7 +137,8 @@
     });
   }
   function showInstallOnboarding(){
-    if(isStandalone()||localStorage.getItem('wepadel-install-dismissed')==='1')return false;
+    if(isStandalone()||localStorage.getItem('wepadel-install-dismissed')==='1'||sessionStorage.getItem('wepadel-install-shown-session')==='1')return false;
+    sessionStorage.setItem('wepadel-install-shown-session','1');
     if(isIOS()){
       modal('Installeer WEPADEL als app','<div class="onboarding-card"><div class="onboarding-icon">📲</div><h3>Zet WEPADEL op je beginscherm</h3><ol><li>Tik onderin Safari op <b>Deel</b>.</li><li>Kies <b>Zet op beginscherm</b>.</li><li>Tik op <b>Voeg toe</b>.</li></ol><p class="muted">Open WEPADEL daarna via het app-icoon om meldingen te kunnen ontvangen.</p><button class="btn primary full" data-close-modal>Begrepen</button><button class="text-button" id="dismissInstall">Niet meer tonen</button></div>',()=>{$('#dismissInstall').onclick=()=>{localStorage.setItem('wepadel-install-dismissed','1');closeModal();};});return true;
     }
@@ -154,7 +155,12 @@
   function scheduleNotificationSync(){clearTimeout(notificationSyncTimer);notificationSyncTimer=setTimeout(()=>DB.syncNotifications?.(),700);}
   function runOnboarding(){setTimeout(()=>{if(!showInstallOnboarding())maybeShowNotificationOnboarding();},350);}
   function showApp(){ $('#postLoginSplash').classList.add('hidden'); $('#postLoginSplash').setAttribute('aria-hidden','true'); $('#loginScreen').classList.add('hidden'); $('#appShell').classList.remove('hidden'); $('#accountNavLabel').textContent=isAdmin()?'Beheer':'Account'; if(current()?.must_change_password) openPasswordModal(true); render(); updateActionBadges(); scheduleNotificationSync(); runOnboarding(); setTimeout(()=>{if(pendingSwapForMe()&&!state.swapPopupShown){state.swapPopupShown=true;openPendingSwap();}},250); }
-  function showLogin(){ $('#postLoginSplash').classList.add('hidden'); $('#appShell').classList.add('hidden'); $('#loginScreen').classList.remove('hidden'); }
+  function showLogin(){
+    $('#postLoginSplash').classList.add('hidden');
+    $('#appShell').classList.add('hidden');
+    $('#loginScreen').classList.remove('hidden');
+    setTimeout(()=>showInstallOnboarding(),180);
+  }
   async function showPostLoginSplash(){
     $('#loginScreen').classList.add('hidden');
     $('#appShell').classList.add('hidden');
@@ -649,6 +655,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.13.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3130')){sessionStorage.setItem('wepadel-sw-3130','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.13.1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3131')){sessionStorage.setItem('wepadel-sw-3131','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();
