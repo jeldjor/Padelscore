@@ -481,7 +481,7 @@
       court_number: Number(input.court_number),
       blue_player_1: ids[0], blue_player_2: ids[1],
       red_player_1: ids[2], red_player_2: ids[3],
-      status: 'active',
+      status: 'scheduled',
       score_state: PadelScoring.freshScore(),
       blue_games: 0, red_games: 0,
       set_completed: false, timed_out: false, winner_team: null
@@ -595,7 +595,7 @@
     if (playday.date !== localDateISO()) throw new Error('Wedstrijden kunnen pas op de speeldag worden gemaakt.');
     if (!Array.isArray(ids) || ids.length !== 4 || new Set(ids).size !== 4) throw new Error('Er zijn precies vier verschillende spelers nodig.');
     const [a,b,c,d]=ids;
-    const rows=[[a,b,c,d],[a,c,b,d],[a,d,b,c]].map((x,i)=>({playday_id:playdayId,court_number:Number(courtNumber),blue_player_1:x[0],blue_player_2:x[1],red_player_1:x[2],red_player_2:x[3],status:i===0?'active':'scheduled',score_state:PadelScoring.freshScore(),blue_games:0,red_games:0,set_completed:false,timed_out:false,winner_team:null}));
+    const rows=[[a,b,c,d],[a,c,b,d],[a,d,b,c]].map(x=>({playday_id:playdayId,court_number:Number(courtNumber),blue_player_1:x[0],blue_player_2:x[1],red_player_1:x[2],red_player_2:x[3],status:'scheduled',score_state:PadelScoring.freshScore(),blue_games:0,red_games:0,set_completed:false,timed_out:false,winner_team:null}));
     const { error } = await client.from('matches').insert(rows);
     if (error) fail(error);
     return loadAll();
@@ -604,6 +604,8 @@
   async function startMatch(id) {
     const match=cache.matches.find(m=>m.id===id),playday=match&&cache.playdays.find(p=>p.id===match.playday_id);
     if(!match||!canHost(playday)) throw new Error('Geen toegang tot deze wedstrijd.');
+    if(playday.date !== localDateISO()) throw new Error('Een wedstrijd kan alleen op de speeldag worden gestart.');
+    if(match.status !== 'scheduled') throw new Error('Deze wedstrijd staat niet meer klaar om te starten.');
     if(cache.matches.some(m=>m.playday_id===match.playday_id&&m.court_number===match.court_number&&m.status==='active'&&!m.deleted_at)) throw new Error('Rond eerst de actieve wedstrijd op deze baan af.');
     const {error}=await client.from('matches').update({status:'active',started_at:new Date().toISOString(),score_state:PadelScoring.freshScore(),blue_games:0,red_games:0}).eq('id',id);
     if(error) fail(error);return loadAll();
@@ -611,15 +613,23 @@
 
   async function resetStatistics() {
     requireAdmin();
-    const { error } = await client.rpc('reset_all_statistics');
-    if (error) fail(error);
+    await callFunction(cfg.adminFunctionName || 'admin-users', { action: 'reset_statistics' });
+    return loadAll();
+  }
+
+  async function fullReset() {
+    requireAdmin();
+    await callFunction(cfg.adminFunctionName || 'admin-users', { action: 'full_reset', confirmation: 'RESETTEN' });
     return loadAll();
   }
 
   async function deleteMatch(id) {
+    const me = requireUser();
     const match = cache.matches.find(m => m.id === id);
     const playday = match && cache.playdays.find(p => p.id === match.playday_id);
-    if (!match || !canHost(playday)) throw new Error('Geen toegang.');
+    if (!match || !playday) throw new Error('Wedstrijd niet gevonden.');
+    const allowed = me.role === 'admin' || (playday.host_id === me.id && playday.date === localDateISO());
+    if (!allowed) throw new Error('Na de speeldag kan alleen de beheerder een wedstrijd verwijderen.');
     const { error } = await client.from('matches').update({ deleted_at: new Date().toISOString() }).eq('id', id);
     if (error) fail(error);
     return loadAll();
@@ -672,7 +682,7 @@
     listPlaydays, getPlayday, upsertPlayday, deletePlayday,
     setRsvp, listRsvps, listSlots, setSlotPaid, enterLobby, setReady, listAttendance, setAttendance,
     listMatches, createMatch, createRoundRobinMatches, startMatch, updateMatchScore, finishMatch, finishMatchManual, setLiveScoring, deleteMatch,
-    listSwapRequests, requestSwap, respondSwap, resetStatistics,
+    listSwapRequests, requestSwap, respondSwap, resetStatistics, fullReset,
     endSession, reviewSession, resolveSession, listReviews,
     refresh: loadAll
   };

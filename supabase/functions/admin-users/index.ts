@@ -130,6 +130,49 @@ Deno.serve(async (req) => {
     return settingRes.ok ? json({ ok: true }) : json({ error: 'Competitiecode wijzigen is mislukt.' }, settingRes.status);
   }
 
+  if (body.action === 'reset_statistics') {
+    const rpc = await fetch(`${url}/rest/v1/rpc/reset_all_statistics`, {
+      method: 'POST',
+      headers: { apikey: publishable, authorization: bearer, 'content-type': 'application/json' },
+      body: '{}',
+    });
+    const details = await rpc.json().catch(() => null);
+    if (!rpc.ok) return json({ error: details?.message || details?.error || 'Statistieken resetten is mislukt.' }, rpc.status);
+    return json({ ok: true });
+  }
+
+  if (body.action === 'full_reset') {
+    if (String(body.confirmation || '').trim().toUpperCase() !== 'RESETTEN') {
+      return json({ error: 'Typ RESETTEN om de volledige reset te bevestigen.' }, 400);
+    }
+
+    const meProfileRes = await fetch(`${url}/rest/v1/profiles?id=eq.${me.id}&select=competition_id&limit=1`, { headers: adminHeaders });
+    const meProfiles = await meProfileRes.json().catch(() => []);
+    const competitionId = meProfiles?.[0]?.competition_id;
+    if (!meProfileRes.ok || !competitionId) return json({ error: 'Competitie niet gevonden.' }, 404);
+
+    const playersRes = await fetch(`${url}/rest/v1/profiles?competition_id=eq.${competitionId}&id=neq.${me.id}&select=id`, { headers: adminHeaders });
+    const playerRows = await playersRes.json().catch(() => []);
+    if (!playersRes.ok) return json({ error: 'Testaccounts ophalen is mislukt.' }, playersRes.status);
+    const playerIds = playerRows.map((row: { id?: string }) => String(row.id || '')).filter(Boolean);
+
+    const rpc = await fetch(`${url}/rest/v1/rpc/reset_competition_completely`, {
+      method: 'POST',
+      headers: { apikey: publishable, authorization: bearer, 'content-type': 'application/json' },
+      body: '{}',
+    });
+    const details = await rpc.json().catch(() => null);
+    if (!rpc.ok) return json({ error: details?.message || details?.error || 'Competitie leegmaken is mislukt.' }, rpc.status);
+
+    const failed: string[] = [];
+    for (const id of playerIds) {
+      const remove = await fetch(`${url}/auth/v1/admin/users/${id}`, { method: 'DELETE', headers: adminHeaders });
+      if (!remove.ok && remove.status !== 404) failed.push(id);
+    }
+    if (failed.length) return json({ error: `De competitiegegevens zijn gewist, maar ${failed.length} loginaccount(s) konden niet worden verwijderd.` }, 500);
+    return json({ ok: true, removed_users: playerIds.length });
+  }
+
   const username = String(body.username || '').trim().toLowerCase();
   const displayName = String(body.display_name || username).trim().replace(/\s+/g, ' ');
   const email = username ? `${username}@padelscore.local` : '';

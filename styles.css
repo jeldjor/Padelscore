@@ -349,3 +349,9 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
 .event-status-line .mini-tikkie{display:inline-flex;align-items:center;padding:6px 8px;border-radius:999px;background:rgba(145,207,16,.15)}
 @media(max-width:560px){.occupancy-row{grid-template-columns:minmax(0,1fr) auto 16px!important;gap:5px!important}.event-open{grid-template-columns:52px minmax(0,1fr)!important;gap:5px!important}.event-main{padding:0 4px!important;min-width:0}.event-main b,.event-main strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}.event-status-line{max-width:145px;gap:3px}.event-status-line .court-occupancy,.event-status-line .payment-summary,.event-status-line .mini-tikkie{font-size:8px;padding:5px 6px}.event-chevron{display:block!important;font-size:18px!important}}
 @media(max-width:390px){.event-status-line{max-width:118px}.event-status-line .court-occupancy,.event-status-line .payment-summary,.event-status-line .mini-tikkie{font-size:7px;padding:4px 5px}}
+
+/* WEPADEL 3.9.0 - destructive full reset */
+.destructive-reset-form .danger-panel{padding:14px;border:1px solid rgba(220,38,38,.35);border-radius:14px;background:rgba(220,38,38,.08)}
+.destructive-reset-form .danger-panel strong{display:block;color:#b91c1c;margin-bottom:6px}
+.destructive-reset-form .danger-panel p{margin:0;line-height:1.45}
+.destructive-reset-form button:disabled{opacity:.45;cursor:not-allowed}
