@@ -432,3 +432,25 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   .dashboard-playdays .event-main b,.dashboard-playdays .event-main strong{font-size:11px}
   .dashboard-playdays .event-status-line .court-occupancy,.dashboard-playdays .event-status-line .payment-summary,.dashboard-playdays .event-status-line .mini-tikkie{font-size:7px;padding:4px 5px}
 }
+
+/* WEPADEL 3.12.2 — grotere tekst en verticale centrering dashboardregels */
+.dashboard-playdays .event-row.luxe{align-items:center}
+.dashboard-playdays .event-open{align-self:center}
+.dashboard-playdays .date-box{align-self:center;align-items:center;line-height:1}
+.dashboard-playdays .date-box b,.dashboard-playdays .date-box small{font-size:10px;line-height:1}
+.dashboard-playdays .date-box strong{font-size:20px;line-height:1}
+.dashboard-playdays .event-main{align-self:center;line-height:1.15}
+.dashboard-playdays .event-main b,.dashboard-playdays .event-main strong{font-size:13px;line-height:1.15}
+.dashboard-playdays .event-side{display:flex;align-items:center;align-self:center}
+.dashboard-playdays .event-status-line{align-items:center}
+.dashboard-playdays .event-status-line .court-occupancy,
+.dashboard-playdays .event-status-line .payment-summary,
+.dashboard-playdays .event-status-line .mini-tikkie{font-size:9px;line-height:1;padding:4px 6px}
+@media(max-width:390px){
+  .dashboard-playdays .date-box b,.dashboard-playdays .date-box small{font-size:9px}
+  .dashboard-playdays .date-box strong{font-size:19px}
+  .dashboard-playdays .event-main b,.dashboard-playdays .event-main strong{font-size:12px}
+  .dashboard-playdays .event-status-line .court-occupancy,
+  .dashboard-playdays .event-status-line .payment-summary,
+  .dashboard-playdays .event-status-line .mini-tikkie{font-size:8px;padding:4px 5px}
+}
