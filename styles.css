@@ -454,3 +454,18 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   .dashboard-playdays .event-status-line .payment-summary,
   .dashboard-playdays .event-status-line .mini-tikkie{font-size:8px;padding:4px 5px}
 }
+
+/* WEPADEL 3.12.3 — correcte GJ Motion asset en leesbare ruimte tussen maand en duur */
+.dashboard-playdays .event-open{
+  grid-template-columns:76px minmax(0,1fr)!important;
+  column-gap:9px!important;
+}
+.dashboard-playdays .date-box{
+  padding-right:3px;
+}
+@media(max-width:480px){
+  .dashboard-playdays .event-open{
+    grid-template-columns:70px minmax(0,1fr)!important;
+    column-gap:8px!important;
+  }
+}
