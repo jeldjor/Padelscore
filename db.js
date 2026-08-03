@@ -75,6 +75,7 @@
     duration_minutes: input.duration_minutes ? Math.max(1, Number(input.duration_minutes)) : null,
     cost_per_player: input.cost_per_player ?? null,
     tikkie_url: input.tikkie_url || '',
+    tikkie_created_at: input.tikkie_created_at || null,
     live_scoring_enabled: input.live_scoring_enabled !== false
   });
 
