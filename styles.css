@@ -877,3 +877,31 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
   z-index:3!important;
   display:block!important;
 }
+
+/* WEPADEL 3.17.2 — subtiel geel randje voor complete eigen baan */
+.day.court-complete{
+  border-color:#f3d34a!important;
+  box-shadow:inset 0 0 0 1px rgba(243,211,74,.72)!important;
+}
+.day.court-complete.today{
+  box-shadow:
+    inset 0 0 0 1px rgba(243,211,74,.72),
+    0 0 0 1px rgba(155,215,15,.18)!important;
+}
+.calendar-tennis-ball{
+  display:none!important;
+}
+.calendar-status-legend .complete{
+  width:10px!important;
+  height:10px!important;
+  border-radius:3px!important;
+  background:transparent!important;
+  border:1.5px solid #f3d34a!important;
+  box-shadow:inset 0 0 0 1px rgba(243,211,74,.18);
+}
+@media(max-width:420px){
+  .calendar-status-legend{
+    gap:9px!important;
+    flex-wrap:wrap;
+  }
+}

@@ -284,11 +284,11 @@
       const label=arr.length?(response==='playing'?'Speeldag, je doet mee':response==='not_playing'?'Speeldag, je kunt niet':'Open speeldag, nog niet gereageerd'):'Geen speeldag';
       const completedPlayday=arr.find(pd=>rsvpStatus(pd.id)==='playing'&&currentUserCourtComplete(pd.id));
       const courtComplete=Boolean(completedPlayday);
-      cells+=`<button class="${cls}${courtComplete?' court-complete':''}" data-date="${date}" ${arr[0]?`data-pd="${arr[0].id}"`:''} aria-label="${d} ${esc(label)}${courtComplete?', jouw baan is compleet':''}"><span>${d}</span>${courtComplete?'<i class="calendar-tennis-ball" aria-hidden="true"></i>':''}</button>`;
+      cells+=`<button class="${cls}${courtComplete?' court-complete':''}" data-date="${date}" ${arr[0]?`data-pd="${arr[0].id}"`:''} aria-label="${d} ${esc(label)}${courtComplete?', jouw baan is compleet':''}"><span>${d}</span></button>`;
     }
     const total=Math.ceil((offset+days)/7)*7;
     for(let i=offset+days;i<total;i++){ cells+=`<button class="day other" disabled><span>${i-(offset+days)+1}</span></button>`; }
-    return `<section class="month single luxe-month"><div class="weekdays"><span>MA</span><span>DI</span><span>WO</span><span>DO</span><span>VR</span><span>ZA</span><span>ZO</span></div><div class="days">${cells}</div><div class="calendar-status-legend"><span><i class="open"></i>Open</span><span><i class="yes"></i>Ik speel mee</span><span><i class="no">×</i>Ik kan niet</span></div></section>`;
+    return `<section class="month single luxe-month"><div class="weekdays"><span>MA</span><span>DI</span><span>WO</span><span>DO</span><span>VR</span><span>ZA</span><span>ZO</span></div><div class="days">${cells}</div><div class="calendar-status-legend"><span><i class="open"></i>Open</span><span><i class="yes"></i>Ik speel mee</span><span><i class="complete"></i>Baan compleet</span><span><i class="no">×</i>Ik kan niet</span></div></section>`;
   }
   function slotPaymentMarkup(slot,editable){
     const inherited=slot.paid&&slot.payment_inherited_from?`<small>overgenomen van ${esc(nameOf(slot.payment_inherited_from))}</small>`:'';
@@ -698,6 +698,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.17.1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3171')){sessionStorage.setItem('wepadel-sw-3171','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.17.2',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3172')){sessionStorage.setItem('wepadel-sw-3172','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();
