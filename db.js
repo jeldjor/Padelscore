@@ -209,6 +209,8 @@
     }
     session = set?.data?.session || null;
     if (!session) throw new Error('De login kon niet worden opgeslagen. Probeer opnieuw.');
+    const loginStamp = await client.rpc('mark_login');
+    if (loginStamp?.error) console.warn('Laatste login kon niet worden bijgewerkt:', loginStamp.error);
     await loadAll();
     subscribe();
     const me = current();

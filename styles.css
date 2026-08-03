@@ -568,3 +568,102 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
 .bottom-nav button{position:relative;z-index:1;text-shadow:0 1px 5px rgba(0,0,0,.5)}
 .bottom-nav button.active::after{content:"";position:absolute;top:0;left:28%;right:28%;height:2px;border-radius:2px;background:var(--green2);box-shadow:0 0 8px rgba(145,207,16,.5)}
 .username-cooldown{display:grid;gap:10px;padding:8px 0 2px}.username-cooldown>strong{font-size:22px;color:var(--green2)}.username-cooldown p{margin:0;color:#b7c8c2;line-height:1.5}
+
+
+/* WEPADEL 3.16.0 — gekozen padelheader op het Overzicht */
+.app-shell.dashboard-active{
+  position:relative;
+  background:
+    linear-gradient(180deg,rgba(2,13,10,.08) 0,rgba(2,13,10,.42) 280px,#020b09 470px);
+}
+.app-shell.dashboard-active::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  top:0;
+  left:50%;
+  width:min(100%,928px);
+  height:455px;
+  transform:translateX(-50%);
+  background-image:
+    linear-gradient(180deg,rgba(2,13,10,.12) 0%,rgba(2,13,10,.40) 58%,#020b09 100%),
+    url("dashboard-padel-header-v316.jpg");
+  background-repeat:no-repeat;
+  background-position:center top;
+  background-size:cover;
+  pointer-events:none;
+}
+.app-shell.dashboard-active .topbar{
+  position:relative;
+  z-index:2;
+  background:linear-gradient(180deg,rgba(2,12,10,.72),rgba(2,12,10,.16));
+  border-bottom-color:transparent;
+  backdrop-filter:none;
+}
+.app-shell.dashboard-active .main-content{
+  position:relative;
+  z-index:1;
+}
+.app-shell.dashboard-active .dashboard-greeting{
+  margin-top:2px;
+  padding-top:4px;
+  text-shadow:0 3px 14px rgba(0,0,0,.9);
+}
+.app-shell.dashboard-active .dashboard-kpis{
+  background:rgba(2,15,12,.52);
+  border-top:1px solid rgba(137,176,162,.22);
+  border-bottom:1px solid rgba(137,176,162,.22);
+  backdrop-filter:blur(5px);
+}
+.app-shell.dashboard-active .dashboard-playdays{
+  background:rgba(2,15,12,.80)!important;
+}
+
+/* Grotere en duidelijkere knoppen onderin */
+.app-shell{
+  padding-bottom:calc(102px + env(safe-area-inset-bottom));
+}
+.bottom-nav{
+  height:calc(92px + env(safe-area-inset-bottom))!important;
+  padding:6px 8px env(safe-area-inset-bottom)!important;
+  align-items:stretch;
+}
+.bottom-nav button{
+  min-width:68px;
+  min-height:78px;
+  padding:8px 4px 7px!important;
+  font-size:12px!important;
+  font-weight:650;
+  line-height:1.1;
+  gap:6px!important;
+}
+.bottom-nav button span{
+  font-size:25px!important;
+  line-height:1;
+}
+.bottom-nav button b{
+  font-size:12px;
+  font-weight:650;
+}
+.bottom-nav button.active{
+  color:var(--green2);
+}
+.bottom-nav button.active span{
+  filter:drop-shadow(0 0 6px rgba(145,207,16,.38));
+}
+.nav-action-badge{
+  top:3px!important;
+  right:13%!important;
+  min-width:21px!important;
+  height:21px!important;
+  font-size:12px!important;
+  line-height:21px!important;
+}
+
+/* Laatste login overzichtelijk onder de speler */
+.last-login-line{
+  display:block;
+  margin-top:3px;
+  color:#89a198!important;
+  font-size:10px!important;
+}
