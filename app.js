@@ -51,6 +51,11 @@
   }
   function occupancyMarkup(p){ return courtOccupancy(p).map(x=>`<span class=\"court-occupancy ${x.count===4?'complete':'open'}\">Baan ${x.court} · ${x.count}/4</span>`).join(''); }
   function pendingSwapForMe(){ return (DB.listSwapRequests?.()||[]).find(r=>r.to_user_id===current()?.id&&r.status==='pending'); }
+  function outgoingSwapFor(playdayId){ return (DB.listSwapRequests?.()||[]).find(r=>r.playday_id===playdayId&&r.from_user_id===current()?.id&&r.status==='pending'); }
+  function inheritedFromName(slot,playdayId){
+    const request=(DB.listSwapRequests?.()||[]).filter(r=>r.playday_id===playdayId&&r.to_user_id===slot.user_id&&r.court_number===slot.court_number&&r.slot_number===slot.slot_number&&r.status==='accepted').sort((a,b)=>String(b.responded_at||b.created_at||'').localeCompare(String(a.responded_at||a.created_at||'')))[0];
+    return request?nameOf(request.from_user_id):(slot.payment_inherited_from?nameOf(slot.payment_inherited_from):'');
+  }
   function canHost(pd){ return DB.canHost(pd); }
   function isPlaydayToday(pd){ return pd?.date===todayISO(); }
   function liveScoringEnabled(pd){ return pd?.live_scoring_enabled!==false; }
@@ -147,8 +152,8 @@
   }
   function playdayRow(p, statusOverride=''){
     const time=playdayTimeText(p),place=playdayLocationText(p),mine=playdaySlots(p.id).find(s=>s.user_id===current()?.id),complete=mine&&playdaySlots(p.id).filter(s=>s.court_number===mine.court_number&&s.user_id).length===4;
-    const payment=complete?`<span class=\"payment-summary ${mine.paid?'paid':'unpaid'}\">${mine.paid?'✓ Betaald':'Nog niet betaald'}</span>${!mine.paid&&p.tikkie_url?`<a class=\"mini-tikkie\" href=\"${esc(p.tikkie_url)}\" target=\"_blank\" rel=\"noopener\" onclick=\"event.stopPropagation()\">Open Tikkie</a>`:''}`:'';
-    return `<div class=\"event-row luxe occupancy-row\"><button class=\"event-open\" data-open-playday=\"${p.id}\">${fmtDayBadge(p.date)}<span class=\"event-main\"><b>${esc(time||'Speeldag')}</b>${place?`<strong>${esc(place)}</strong>`:''}</span></button><span class=\"event-side\">${occupancyMarkup(p)}${payment}</span><button class=\"chev event-chevron\" data-open-playday=\"${p.id}\">›</button></div>`;
+    const payment=complete?`<span class="payment-summary ${mine.paid?'paid':'unpaid'}">${mine.paid?'✓ Betaald':'Nog niet betaald'}</span>${!mine.paid&&p.tikkie_url?`<a class="mini-tikkie" href="${esc(p.tikkie_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Open Tikkie</a>`:''}`:'';
+    return `<div class="event-row luxe occupancy-row"><button class="event-open" data-open-playday="${p.id}">${fmtDayBadge(p.date)}<span class="event-main"><b>${esc(time||'Speeldag')}</b>${place?`<strong>${esc(place)}</strong>`:''}</span></button><div class="event-side"><div class="event-status-line">${occupancyMarkup(p)}${payment}</div></div><button class="chev event-chevron" data-open-playday="${p.id}" aria-label="Open speeldag">›</button></div>`;
   }
 
   function renderDashboard(){
@@ -236,7 +241,8 @@
       progressText=mineCourtComplete?(mineSlot.paid?'Jouw plek staat als betaald.':'Jouw baan is compleet; de betaling kan nu worden geregeld.'):'Je plek staat vast.';
       progressWidth=Math.min(100,(filled/4)*100);
       if(mineCourtComplete&&mineSlot.paid){
-        paymentAction=`<p class="paid-confirm">✓ Betaald${mineSlot.payment_inherited_from?` · overgenomen van ${esc(nameOf(mineSlot.payment_inherited_from))}`:''}</p>`;
+        const inheritedName=inheritedFromName(mineSlot,pd.id);
+        paymentAction=`<p class="paid-confirm">✓ Betaald${inheritedName?` · overgenomen van ${esc(inheritedName)}`:''}</p>`;
       }else if(mineCourtComplete&&pd.tikkie_url){
         paymentAction=`<a class="btn primary full pay-btn" href="${esc(pd.tikkie_url)}" target="_blank" rel="noopener"><span class="tikkie-mark">€</span> Open Tikkie</a><small class="payment-delay">Na betaling kan het tot 24 uur duren voordat je status is aangepast.</small>`;
       }else if(mineCourtComplete){
@@ -250,7 +256,7 @@
     }
     return `<button class="detail-back" data-back-list>‹</button>${uiHeader(esc(fmtDate(pd.date)), '', '')}
       <div class="playday-meta-cards">${playdayTimeText(pd)?`<div class="meta-chip">◷ ${esc(playdayTimeText(pd))}</div>`:''}${pd.location_enabled===false?'':`<div class="meta-chip">⌖ ${esc(playdayLocationText(pd))}</div>`}<div class="meta-chip tikkie-meta">${tikkieMeta(pd)}</div></div>
-      <section class="flat-section rsvp-section"><h2>Jouw status</h2><div class="choice-grid luxe-choices"><button class="choice ${selectedResponse==='playing'?'selected':''}" data-rsvp="playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✓</b><span>Ik speel mee</span></button>${mineCourtComplete?`<button class="choice swap" data-request-swap><b class="choice-mark">⇄</b><span>Ruilen</span></button>`:`<button class="choice no ${selectedResponse==='not_playing'?'selected':''}" data-rsvp="not_playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✕</b><span>Ik kan niet</span></button>`}</div>${selectedResponse?`<p class="rsvp-current ${selectedResponse==='playing'?'yes':'no'}">${selectedResponse==='playing'?'✓ Je speelt mee':'✕ Je speelt niet mee'}</p>`:'<p class="rsvp-current open">Nog niet gekozen</p>'}</section>
+      <section class="flat-section rsvp-section"><h2>Jouw status</h2><div class="choice-grid luxe-choices"><button class="choice ${selectedResponse==='playing'?'selected':''}" data-rsvp="playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✓</b><span>Ik speel mee</span></button>${mineCourtComplete?(outgoingSwapFor(pd.id)?`<button class="choice swap requested" disabled><b class="choice-mark">⇄</b><span>Ruilverzoek gedaan</span></button>`:`<button class="choice swap" data-request-swap><b class="choice-mark">⇄</b><span>Ruilen</span></button>`):`<button class="choice no ${selectedResponse==='not_playing'?'selected':''}" data-rsvp="not_playing" ${state.pendingRsvp?'disabled':''}><b class="choice-mark">✕</b><span>Ik kan niet</span></button>`}</div>${selectedResponse?`<p class="rsvp-current ${selectedResponse==='playing'?'yes':'no'}">${selectedResponse==='playing'?'✓ Je speelt mee':'✕ Je speelt niet mee'}</p>`:'<p class="rsvp-current open">Nog niet gekozen</p>'}</section>
       <section class="flat-section signup-overview"><div class="section-title"><h2>Spelers (${all.length})</h2><span class="host-pill">Host: ${playerNameMarkup(pd.host_id)}</span></div><div class="signup-courts">${courtGroups}</div>${renderReserveList(reserves,users)}</section>
       ${progressTitle?`<section class="flat-section progress-panel"><div class="progress-head"><div class="progress-icon">▣</div><div><strong>${progressTitle}</strong><span>${progressText}</span></div></div><div class="bar-track"><i style="width:${progressWidth}%"></i></div>${paymentAction}</section>`:''}
       ${readyButton}${renderReviewPanel(pd,attendance,reviews,myReview,host)}
@@ -535,6 +541,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.7.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-370')){sessionStorage.setItem('wepadel-sw-370','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.7.1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-371')){sessionStorage.setItem('wepadel-sw-371','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();

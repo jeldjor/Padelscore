@@ -1,0 +1,10 @@
+project_id = "zikkxlwskskskykbxbvy"
+
+[functions.username-login]
+verify_jwt = false
+
+[functions.self-register]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = true
