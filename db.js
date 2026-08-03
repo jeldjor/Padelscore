@@ -26,7 +26,8 @@
     slots: [],
     attendance: [],
     matches: [],
-    reviews: []
+    reviews: [],
+    swaps: []
   };
 
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -108,7 +109,8 @@
       client.from('playday_slots').select('*').order('court_number').order('slot_number'),
       client.from('attendance').select('*'),
       client.from('matches').select('*').order('started_at', { ascending: false }),
-      client.from('session_reviews').select('*')
+      client.from('session_reviews').select('*'),
+      client.from('swap_requests').select('*').order('created_at', { ascending: false })
     ]);
     const firstError = requests.find(r => r.error)?.error;
     if (firstError) fail(firstError);
@@ -125,6 +127,7 @@
       score_state: m.score_state && Object.keys(m.score_state).length ? m.score_state : PadelScoring.freshScore()
     }));
     cache.reviews = requests[7].data || [];
+    cache.swaps = requests[8].data || [];
     emit();
     return current();
   }
@@ -139,6 +142,7 @@
     cache.attendance = [];
     cache.matches = [];
     cache.reviews = [];
+    cache.swaps = [];
     emit();
     return null;
   }
@@ -151,7 +155,7 @@
   function subscribe() {
     if (channel) client.removeChannel(channel);
     channel = client.channel('padelscore-live');
-    ['profiles','playdays','rsvps','playday_slots','attendance','matches','session_reviews'].forEach(table => {
+    ['profiles','playdays','rsvps','playday_slots','attendance','matches','session_reviews','swap_requests'].forEach(table => {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleRefresh);
     });
     channel.subscribe();
@@ -258,6 +262,7 @@
   const listAttendance = playdayId => clone(cache.attendance.filter(a => a.playday_id === playdayId));
   const listMatches = playdayId => clone(cache.matches.filter(m => !playdayId || m.playday_id === playdayId));
   const listReviews = playdayId => clone(cache.reviews.filter(r => r.playday_id === playdayId));
+  const listSwapRequests = () => clone(cache.swaps);
 
   async function createUser(input) {
     requireAdmin();
@@ -570,6 +575,47 @@
     });
   }
 
+  async function requestSwap(playdayId, toUserId) {
+    requireUser();
+    const { error } = await client.rpc('request_playday_swap', { p_playday_id: playdayId, p_to_user_id: toUserId });
+    if (error) fail(error);
+    return loadAll();
+  }
+
+  async function respondSwap(requestId, accept) {
+    requireUser();
+    const { error } = await client.rpc('respond_playday_swap', { p_request_id: requestId, p_accept: Boolean(accept) });
+    if (error) fail(error);
+    return loadAll();
+  }
+
+  async function createRoundRobinMatches(playdayId, courtNumber, ids) {
+    const playday = cache.playdays.find(p => p.id === playdayId);
+    if (!canHost(playday)) throw new Error('Alleen de host of beheerder kan wedstrijden maken.');
+    if (playday.date !== localDateISO()) throw new Error('Wedstrijden kunnen pas op de speeldag worden gemaakt.');
+    if (!Array.isArray(ids) || ids.length !== 4 || new Set(ids).size !== 4) throw new Error('Er zijn precies vier verschillende spelers nodig.');
+    const [a,b,c,d]=ids;
+    const rows=[[a,b,c,d],[a,c,b,d],[a,d,b,c]].map((x,i)=>({playday_id:playdayId,court_number:Number(courtNumber),blue_player_1:x[0],blue_player_2:x[1],red_player_1:x[2],red_player_2:x[3],status:i===0?'active':'scheduled',score_state:PadelScoring.freshScore(),blue_games:0,red_games:0,set_completed:false,timed_out:false,winner_team:null}));
+    const { error } = await client.from('matches').insert(rows);
+    if (error) fail(error);
+    return loadAll();
+  }
+
+  async function startMatch(id) {
+    const match=cache.matches.find(m=>m.id===id),playday=match&&cache.playdays.find(p=>p.id===match.playday_id);
+    if(!match||!canHost(playday)) throw new Error('Geen toegang tot deze wedstrijd.');
+    if(cache.matches.some(m=>m.playday_id===match.playday_id&&m.court_number===match.court_number&&m.status==='active'&&!m.deleted_at)) throw new Error('Rond eerst de actieve wedstrijd op deze baan af.');
+    const {error}=await client.from('matches').update({status:'active',started_at:new Date().toISOString(),score_state:PadelScoring.freshScore(),blue_games:0,red_games:0}).eq('id',id);
+    if(error) fail(error);return loadAll();
+  }
+
+  async function resetStatistics() {
+    requireAdmin();
+    const { error } = await client.rpc('reset_all_statistics');
+    if (error) fail(error);
+    return loadAll();
+  }
+
   async function deleteMatch(id) {
     const match = cache.matches.find(m => m.id === id);
     const playday = match && cache.playdays.find(p => p.id === match.playday_id);
@@ -625,7 +671,8 @@
     listUsers, createUser, approveUser, rejectUser, updateUser, saveAvatar, updateRegistrationCode, changePassword, adminResetPassword, blockUser, deleteUser,
     listPlaydays, getPlayday, upsertPlayday, deletePlayday,
     setRsvp, listRsvps, listSlots, setSlotPaid, enterLobby, setReady, listAttendance, setAttendance,
-    listMatches, createMatch, updateMatchScore, finishMatch, finishMatchManual, setLiveScoring, deleteMatch,
+    listMatches, createMatch, createRoundRobinMatches, startMatch, updateMatchScore, finishMatch, finishMatchManual, setLiveScoring, deleteMatch,
+    listSwapRequests, requestSwap, respondSwap, resetStatistics,
     endSession, reviewSession, resolveSession, listReviews,
     refresh: loadAll
   };
