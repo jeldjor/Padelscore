@@ -488,7 +488,7 @@
     if (playday.date !== localDateISO()) throw new Error('Wedstrijden kunnen pas op de speeldag worden gemaakt.');
     const ids = [input.blue_player_1,input.blue_player_2,input.red_player_1,input.red_player_2];
     if (new Set(ids).size !== 4 || ids.some(x => !x)) throw new Error('Kies vier verschillende spelers.');
-    if (cache.matches.some(m => m.playday_id === playday.id && m.court_number === Number(input.court_number) && m.status === 'active' && !m.deleted_at)) {
+    if (cache.matches.some(m => m.playday_id === playday.id && m.court_number === Number(input.court_number) && m.status === 'active' && m.started_at && !m.deleted_at)) {
       throw new Error('Op deze baan is al een wedstrijd bezig.');
     }
     const row = {
@@ -496,7 +496,8 @@
       court_number: Number(input.court_number),
       blue_player_1: ids[0], blue_player_2: ids[1],
       red_player_1: ids[2], red_player_2: ids[3],
-      status: 'scheduled',
+      status: 'active',
+      started_at: null,
       score_state: PadelScoring.freshScore(),
       blue_games: 0, red_games: 0,
       set_completed: false, timed_out: false, winner_team: null
@@ -565,7 +566,7 @@
     if (!playday || !canHost(playday)) throw new Error('Alleen de host of beheerder kan live score wijzigen.');
     if (playday.date !== localDateISO()) throw new Error('Live score kan alleen op de speeldag worden gewijzigd.');
     const value = Boolean(enabled);
-    const activeIds = cache.matches.filter(m => m.playday_id === playdayId && m.status === 'active' && !m.deleted_at).map(m => m.id);
+    const activeIds = cache.matches.filter(m => m.playday_id === playdayId && m.status === 'active' && m.started_at && !m.deleted_at).map(m => m.id);
     if (activeIds.length) {
       const reset = PadelScoring.freshScore();
       const resetResult = await client.from('matches').update({ score_state: reset, blue_games: 0, red_games: 0 }).in('id', activeIds);
@@ -610,7 +611,7 @@
     if (playday.date !== localDateISO()) throw new Error('Wedstrijden kunnen pas op de speeldag worden gemaakt.');
     if (!Array.isArray(ids) || ids.length !== 4 || new Set(ids).size !== 4) throw new Error('Er zijn precies vier verschillende spelers nodig.');
     const [a,b,c,d]=ids;
-    const rows=[[a,b,c,d],[a,c,b,d],[a,d,b,c]].map(x=>({playday_id:playdayId,court_number:Number(courtNumber),blue_player_1:x[0],blue_player_2:x[1],red_player_1:x[2],red_player_2:x[3],status:'scheduled',score_state:PadelScoring.freshScore(),blue_games:0,red_games:0,set_completed:false,timed_out:false,winner_team:null}));
+    const rows=[[a,b,c,d],[a,c,b,d],[a,d,b,c]].map(x=>({playday_id:playdayId,court_number:Number(courtNumber),blue_player_1:x[0],blue_player_2:x[1],red_player_1:x[2],red_player_2:x[3],status:'active',started_at:null,score_state:PadelScoring.freshScore(),blue_games:0,red_games:0,set_completed:false,timed_out:false,winner_team:null}));
     const { error } = await client.from('matches').insert(rows);
     if (error) fail(error);
     return loadAll();
@@ -620,8 +621,8 @@
     const match=cache.matches.find(m=>m.id===id),playday=match&&cache.playdays.find(p=>p.id===match.playday_id);
     if(!match||!canHost(playday)) throw new Error('Geen toegang tot deze wedstrijd.');
     if(playday.date !== localDateISO()) throw new Error('Een wedstrijd kan alleen op de speeldag worden gestart.');
-    if(match.status !== 'scheduled') throw new Error('Deze wedstrijd staat niet meer klaar om te starten.');
-    if(cache.matches.some(m=>m.playday_id===match.playday_id&&m.court_number===match.court_number&&m.status==='active'&&!m.deleted_at)) throw new Error('Rond eerst de actieve wedstrijd op deze baan af.');
+    if(match.status === 'finished' || match.started_at) throw new Error('Deze wedstrijd staat niet meer klaar om te starten.');
+    if(cache.matches.some(m=>m.playday_id===match.playday_id&&m.court_number===match.court_number&&m.status==='active'&&m.started_at&&!m.deleted_at)) throw new Error('Rond eerst de actieve wedstrijd op deze baan af.');
     const {error}=await client.from('matches').update({status:'active',started_at:new Date().toISOString(),score_state:PadelScoring.freshScore(),blue_games:0,red_games:0}).eq('id',id);
     if(error) fail(error);return loadAll();
   }
@@ -653,7 +654,7 @@
   async function endSession(playdayId) {
     const playday = cache.playdays.find(p => p.id === playdayId);
     if (!canHost(playday)) throw new Error('Alleen de host kan afsluiten.');
-    if (cache.matches.some(m => m.playday_id === playdayId && m.status === 'active' && !m.deleted_at)) {
+    if (cache.matches.some(m => m.playday_id === playdayId && m.status === 'active' && m.started_at && !m.deleted_at)) {
       throw new Error('Rond eerst alle actieve wedstrijden af.');
     }
     const reviewDelete = await client.from('session_reviews').delete().eq('playday_id', playdayId);

@@ -377,3 +377,33 @@ html,body{height:100%;min-height:0;overflow:hidden;overscroll-behavior:none}
 
 /* v3.11.0 beheer speeldagspelers */
 .signup-title-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.signup-admin-actions{display:flex;gap:5px;align-items:center;margin-left:auto}.mini-admin-btn{border:1px solid rgba(166,237,12,.35);background:rgba(166,237,12,.08);color:#d8ff78;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:800;white-space:nowrap}.mini-admin-btn.danger{border-color:rgba(255,80,80,.45);background:rgba(255,60,60,.1);color:#ff8b8b}.signup-player-row{flex-wrap:wrap}.signup-player-row .payment-cell{margin-left:auto}@media(max-width:560px){.signup-title{align-items:flex-start}.signup-title-actions{width:100%;justify-content:space-between}.signup-admin-actions{width:100%;justify-content:flex-end}.mini-admin-btn{padding:4px 7px;font-size:10px}}
+
+/* WEPADEL 3.12.0 — compact, aligned playday rows and dashboard sections */
+.aligned-player-row{display:grid!important;grid-template-columns:minmax(170px,1.6fr) 92px 118px auto;align-items:center;gap:10px;min-height:44px;flex-wrap:nowrap!important}
+.player-row-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player-row-role{display:flex;justify-content:center;min-width:0}
+.player-row-payment{display:flex;justify-content:center;min-width:0}
+.player-row-payment .payment-cell{margin:0!important;min-width:0;width:100%;justify-content:center}
+.aligned-player-row .signup-admin-actions{margin:0;justify-content:flex-end;flex-wrap:nowrap}
+.dashboard-playdays{padding-top:10px!important;padding-bottom:10px!important}
+.dashboard-playdays .section-title{margin-bottom:4px}
+.dashboard-playdays .event-row.luxe{min-height:58px}
+.dashboard-playdays .pager{margin-top:5px;padding-top:5px}
+.dashboard-playdays.action-needed .section-title h2{color:#ffcf5a}
+@media(max-width:620px){
+  .aligned-player-row{grid-template-columns:minmax(120px,1.5fr) 64px 88px auto;gap:5px}
+  .aligned-player-row .avatar-name{font-size:12px}
+  .aligned-player-row .mini-pill{font-size:9px;padding:4px 6px}
+  .aligned-player-row .payment-toggle,.aligned-player-row .payment-state{font-size:8px;padding:4px 5px;white-space:nowrap}
+  .aligned-player-row .mini-admin-btn{font-size:9px;padding:4px 5px}
+}
+@media(max-width:470px){
+  .aligned-player-row{grid-template-columns:minmax(104px,1.4fr) 50px 76px auto;gap:3px}
+  .aligned-player-row .signup-admin-actions{gap:3px}
+  .aligned-player-row .mini-admin-btn{font-size:8px;padding:4px}
+  .dashboard-playdays .event-row.luxe{grid-template-columns:1fr auto!important}
+  .dashboard-playdays .event-open{min-width:0}
+  .dashboard-playdays .event-side{display:flex!important;min-width:0}
+  .dashboard-playdays .event-status-line{justify-content:flex-end;gap:4px}
+  .dashboard-playdays .event-chevron{display:none}
+}

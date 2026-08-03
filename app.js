@@ -19,7 +19,7 @@
   const fmtTime = value => value ? String(value).slice(0,5) : '--:--';
   const nowMs = () => Date.now();
 
-  const state = { swapPopupShown:false, page:'dashboard', year:new Date().getFullYear(), month:new Date().getMonth(), playdayView:'calendar', playdayFilter:'all', playdayList:true, selectedCalendarDate:null, playdayPage:0, historyPage:0, adminPage:0, selectedPlaydayId:null, pendingRsvp:null, rsvpOverrides:{}, activeMatchId:null, scoreboardMatchId:null, wakeLock:null, timer:null, controlsTimer:null, recognition:null, adminTab:'requests', scoreboardReadOnly:false };
+  const state = { swapPopupShown:false, dashboardPaidPage:0, dashboardActionPage:0, page:'dashboard', year:new Date().getFullYear(), month:new Date().getMonth(), playdayView:'calendar', playdayFilter:'all', playdayList:true, selectedCalendarDate:null, playdayPage:0, historyPage:0, adminPage:0, selectedPlaydayId:null, pendingRsvp:null, rsvpOverrides:{}, activeMatchId:null, scoreboardMatchId:null, wakeLock:null, timer:null, controlsTimer:null, recognition:null, adminTab:'requests', scoreboardReadOnly:false };
 
   function toast(message, error=false){ const el=$('#toast'); el.textContent=message; el.className=`toast show${error?' error':''}`; clearTimeout(el._t); el._t=setTimeout(()=>el.className='toast',2600); }
   function modal(title, body, onOpen){ $('#modalRoot').innerHTML=`<div class="modal-backdrop"><section class="modal-card"><div class="modal-head"><h2>${esc(title)}</h2><button class="close-btn" data-close-modal>✕</button></div>${body}</section></div>`; $$('[data-close-modal]').forEach(b=>b.onclick=closeModal); onOpen?.(); }
@@ -172,21 +172,21 @@
     const rows=S.aggregate(DB.listUsers().filter(u=>u.active),matches()), mine=statsFor(me.id);
     const rank=rows.findIndex(r=>r.id===me.id)+1;
     const myIds=new Set(DB.listRsvps().filter(r=>r.user_id===me.id&&r.response==='playing').map(r=>r.playday_id));
-    const limit=dashboardLimit();
-    const mineDays=pds.filter(p=>p.date>=today&&myIds.has(p.id)).slice(0,limit);
-    const recent=finishedMatchesFor(me.id).sort((a,b)=>new Date(b.ended_at||b.started_at)-new Date(a.ended_at||a.started_at)).slice(0,limit);
+    const completeDays=pds.filter(p=>p.date>=today&&myIds.has(p.id)).map(p=>({p,slot:playdaySlots(p.id).find(s=>s.user_id===me.id)})).filter(x=>x.slot&&playdaySlots(x.p.id).filter(s=>s.court_number===x.slot.court_number&&s.user_id).length===4);
+    const paidPage=paged(completeDays.filter(x=>x.slot.paid).map(x=>x.p),'dashboardPaidPage',4);
+    const actionPage=paged(completeDays.filter(x=>!x.slot.paid).map(x=>x.p),'dashboardActionPage',4);
     return `<div class="dashboard-greeting"><h1>Welkom, ${esc(firstName(me))}</h1>${avatarMarkup(me)}</div>${pendingSwapForMe()?`<button class="swap-alert" data-open-swap-request><strong>Ruilverzoek ontvangen</strong><span>Bekijk en reageer</span></button>`:''}
       <div class="stats-compact-grid dashboard-kpis flat-kpis">
-        <section class="stat-compact icon ranking"><span>Ranking</span><strong>#${rank||'–'}</strong><small>Huidige positie</small></section>
-        <section class="stat-compact icon points"><span>Punten</span><strong>${mine.points}</strong><small>Totaal verdiend</small></section>
-        <section class="stat-compact icon played"><span>Gespeeld</span><strong>${mine.played}</strong><small>Wedstrijden</small></section>
-        <section class="stat-compact icon win"><span>Winst %</span><strong>${mine.winPct}%</strong><small>Gewonnen wedstrijden</small></section>
+        <section class="stat-compact icon ranking"><span>Ranking</span><strong>#${rank||'–'}</strong></section>
+        <section class="stat-compact icon points"><span>Punten</span><strong>${mine.points}</strong></section>
+        <section class="stat-compact icon played"><span>Gespeeld</span><strong>${mine.played}</strong></section>
+        <section class="stat-compact icon win"><span>Winst %</span><strong>${mine.winPct}%</strong></section>
       </div>
-      <section class="section-block luxe-block"><div class="section-title"><h2>MIJN VOLGENDE SPEELDAGEN</h2><button data-go="playday">Bekijk allemaal</button></div>
-        <div class="event-list">${mineDays.map(p=>playdayRow(p,playdayStatusText(p,'dashboard'))).join('')||'<div class="empty-state">Je bent nog niet ingeschreven voor een komende speeldag.</div>'}</div>
+      <section class="section-block luxe-block dashboard-playdays"><div class="section-title"><h2>MIJN SPEELDAGEN</h2><button data-go="playday">Bekijk allemaal</button></div>
+        <div class="event-list">${paidPage.rows.map(p=>playdayRow(p)).join('')||'<div class="empty-state compact-empty">Nog geen complete en betaalde speeldagen.</div>'}</div>${pager(paidPage,'dashboardPaidPage')}
       </section>
-      <section class="section-block luxe-block"><div class="section-title"><h2>LAATSTE UITSLAGEN</h2><button data-go="history">Historie</button></div>
-        <div class="dashboard-results">${recent.map(m=>{const pd=playdayById(m.playday_id);const side=(m.blue_player_1===me.id||m.blue_player_2===me.id)?'blue':'red';return `<button class="dashboard-result-row" data-match-info="${m.id}"><span class="result-date">${esc(new Intl.DateTimeFormat('nl-NL',{weekday:'short',day:'numeric',month:'short'}).format(new Date(`${pd?.date||today}T12:00:00`)))}</span><strong>${m.blue_games} - ${m.red_games}</strong><small>${esc(pd?.location||'Locatie volgt')}</small><b>+${S.awardedPoints(m,side)} pt</b></button>`;}).join('')||'<div class="empty-state compact-empty">Nog geen uitslag.</div>'}</div>
+      <section class="section-block luxe-block dashboard-playdays action-needed"><div class="section-title"><h2>SPEELDAG BEHOEFT ACTIE</h2></div>
+        <div class="event-list">${actionPage.rows.map(p=>playdayRow(p)).join('')||'<div class="empty-state compact-empty">Geen openstaande betalingen.</div>'}</div>${pager(actionPage,'dashboardActionPage')}
       </section>`;
   }
 
@@ -216,7 +216,7 @@
       const user=users.get(slot.user_id);
       const trailing=complete?slotPaymentMarkup(slot,admin):`<span class="court-position">Baan ${courtNumber} · ${index+1}/4</span>`;
       const adminActions=admin?`<span class="signup-admin-actions"><button class="mini-admin-btn" data-manage-playday-player="${slot.user_id}" data-slot-court="${courtNumber}">Verplaats</button><button class="mini-admin-btn danger" data-remove-playday-player="${slot.user_id}">Verwijder</button></span>`:'';
-      return `<div class="signup-player-row"><strong class="avatar-name">${esc(user?.display_name||'Onbekend')}${avatarMarkup(user)}</strong>${slot.user_id===pd.host_id?'<span class="mini-pill">Host</span>':''}${trailing}${adminActions}</div>`;
+      return `<div class="signup-player-row aligned-player-row"><strong class="avatar-name player-row-name">${esc(user?.display_name||'Onbekend')}${avatarMarkup(user)}</strong><span class="player-row-role">${slot.user_id===pd.host_id?'<span class="mini-pill">Host</span>':''}</span><span class="player-row-payment">${trailing}</span>${adminActions}</div>`;
     });
     courtSlots.filter(s=>!s.user_id&&s.paid).forEach(slot=>rows.push(`<div class="signup-player-row empty-paid"><strong>Open plek</strong><span class="mini-pill">Betaald bewaard</span>${admin?slotPaymentMarkup(slot,true):''}</div>`));
     return `<section class="signup-court ${complete?'complete-court':'incomplete-court'}" aria-label="Baan ${courtNumber}${complete?', compleet':''}"><div>${rows.join('')||'<div class="empty-state compact-empty">Nog geen spelers op deze baan.</div>'}</div></section>`;
@@ -242,7 +242,7 @@
     state.selectedPlaydayId=pd.id;
     const me=current(), users=userMap(), selectedResponse=rsvpStatus(pd.id), at=DB.listAttendance(pd.id).find(a=>a.user_id===me.id), host=canHost(pd), admin=isAdmin(), all=DB.listRsvps(pd.id).filter(r=>r.response==='playing');
     const slots=playdaySlots(pd.id), reserves=reserveRsvps(pd.id), mineSlot=slots.find(s=>s.user_id===me.id), mineReserveIndex=reserves.findIndex(r=>r.user_id===me.id);
-    const dayMatches=DB.listMatches(pd.id).filter(m=>!m.deleted_at), active=dayMatches.filter(m=>m.status==='active'), reviews=DB.listReviews(pd.id), myReview=reviews.find(r=>r.user_id===me.id), attendance=participants(pd.id);
+    const dayMatches=DB.listMatches(pd.id).filter(m=>!m.deleted_at), active=dayMatches.filter(m=>m.status==='active'&&m.started_at), reviews=DB.listReviews(pd.id), myReview=reviews.find(r=>r.user_id===me.id), attendance=participants(pd.id);
     const nextCourtNeed=Math.max(0,4-reserves.length), today=isPlaydayToday(pd);
     const courtGroups=Array.from({length:pd.court_count},(_,i)=>renderSignupCourt(pd,i+1,slots,users,admin)).join('');
     const mineCourtSlots=mineSlot?slots.filter(s=>s.court_number===mineSlot.court_number):[], mineCourtComplete=Boolean(mineSlot)&&mineCourtSlots.filter(s=>s.user_id).length===4;
@@ -285,7 +285,7 @@
   function renderSpectatorCourt(m){ const d=S.display(m.score_state); return `<div class="court-card"><div class="court-title"><strong>Baan ${m.court_number}</strong><span class="badge green">Live</span></div><div class="teams"><div class="team-box blue"><strong>${playerNameMarkup(m.blue_player_1)} & ${playerNameMarkup(m.blue_player_2)}</strong><div class="score-mini">${m.score_state.blueGames} · ${d.bluePoints}</div></div><div class="versus">VS</div><div class="team-box red"><strong>${playerNameMarkup(m.red_player_1)} & ${playerNameMarkup(m.red_player_2)}</strong><div class="score-mini">${m.score_state.redGames} · ${d.redPoints}</div></div></div><button class="btn ghost full" data-view-scoreboard="${m.id}">Groot live scorebord</button></div>`; }
   function renderMatchRow(m,users,host,pd){
     const blue=`${nameOf(m.blue_player_1)} & ${nameOf(m.blue_player_2)}`,red=`${nameOf(m.red_player_1)} & ${nameOf(m.red_player_2)}`;
-    const finished=m.status==='finished',scheduled=m.status==='scheduled',score=finished?`${m.blue_games}-${m.red_games}`:'tegen';
+    const finished=m.status==='finished',scheduled=m.status==='scheduled'||(m.status==='active'&&!m.started_at),score=finished?`${m.blue_games}-${m.red_games}`:'tegen';
     const canDelete=isAdmin()||(host&&isPlaydayToday(pd));
     const editResult=finished&&isAdmin()?`<button class="btn small primary" data-manual-result="${m.id}">Uitslag wijzigen</button>`:'';
     return `<div class="open-row match-row"><div><strong>Baan ${m.court_number}: ${esc(blue)} ${score} ${esc(red)}</strong><small>${finished?'Wedstrijd afgerond':scheduled?'Gepland · nog niet gestart':liveScoringEnabled(pd)?'Live score actief':'Uitslag na afloop invullen'}</small></div><div class="list-actions">${scheduled&&host?`<button class="btn small primary" data-start-match="${m.id}">Start wedstrijd</button>`:!finished&&host?`<button class="btn small primary" ${liveScoringEnabled(pd)?`data-open-match="${m.id}"`:`data-manual-result="${m.id}"`}>${liveScoringEnabled(pd)?'Open':'Uitslag'}</button>`:''}${finished?'<span class="badge green">Klaar</span>':''}${editResult}${canDelete?`<button class="btn small ghost" data-delete-match="${m.id}">Verwijder</button>`:''}</div></div>`;
@@ -502,13 +502,13 @@
 
   function openDayMatches(){
     const pd=selectedPlayday(); if(!pd||!isPlaydayToday(pd))return;
-    const host=canHost(pd),users=userMap(),dayMatches=DB.listMatches(pd.id).filter(m=>!m.deleted_at),active=dayMatches.filter(m=>m.status==='active');
+    const host=canHost(pd),users=userMap(),dayMatches=DB.listMatches(pd.id).filter(m=>!m.deleted_at),active=dayMatches.filter(m=>m.status==='active'&&m.started_at);
     const hostControls=host?`<section class="live-mode-panel"><div><strong>Live score</strong><small>${liveScoringEnabled(pd)?'Punt voor punt en commando’s':'Alleen einduitslag invullen'}</small></div><label class="inline-switch"><input type="checkbox" data-live-toggle ${liveScoringEnabled(pd)?'checked':''}><i></i></label></section><div class="section-title popup-match-title"><h3>Banen</h3><button class="btn primary small" data-new-match>+ Wedstrijd</button></div><div class="grid two">${Array.from({length:pd.court_count},(_,i)=>renderCourt(pd,i+1,active.find(m=>m.court_number===i+1))).join('')}</div>`:'';
     modal('Ready to play!',`${hostControls}<section class="popup-match-list"><div class="section-title"><h3>Wedstrijden (${dayMatches.length})</h3></div><div class="open-rows">${dayMatches.map(m=>renderMatchRow(m,users,host,pd)).join('')||'<div class="empty-state">Nog geen wedstrijden aangemaakt.</div>'}</div></section>`,bindMatchPopup);
   }
 
   function changeLiveScoring(enabled){
-    const pd=selectedPlayday(),active=DB.listMatches(pd.id).some(m=>m.status==='active'&&!m.deleted_at);
+    const pd=selectedPlayday(),active=DB.listMatches(pd.id).some(m=>m.status==='active'&&m.started_at&&!m.deleted_at);
     const save=async()=>{try{await DB.setLiveScoring(pd.id,enabled);toast(enabled?'Live score ingeschakeld':'Live score uitgeschakeld');openDayMatches();}catch(e){toast(e.message||'Er ging iets mis.',true);openDayMatches();}};
     if(active){
       const text=enabled?'Live score wordt opnieuw gestart vanaf 0-0 voor actieve wedstrijden.':'De huidige live set wordt afgebroken. Na de wedstrijd vul je de volledige uitslag handmatig in.';
@@ -589,6 +589,6 @@
     let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(current()&&!state.scoreboardMatchId)render();},120);});
   }
 
-  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.11.1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3111')){sessionStorage.setItem('wepadel-sw-3111','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
+  async function boot(){ bindGlobal(); if('serviceWorker'in navigator){try{const reg=await navigator.serviceWorker.register('./service-worker.js?v=3.12.0',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!sessionStorage.getItem('wepadel-sw-3120')){sessionStorage.setItem('wepadel-sw-3120','1');location.reload();}});}catch{}} try{await DB.init();}catch(e){toast(e.message||'Online verbinding mislukt.',true);} if(current())showApp();else showLogin(); }
   boot();
 })();
