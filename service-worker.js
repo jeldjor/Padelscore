@@ -1,5 +1,5 @@
-const CACHE='wepadel-v3.18.0-no-api-cache';
-const CORE=['./','index.html','styles.css?v=3.18.0','config.js?v=3.18.0','scoring.js?v=3.18.0','db.js?v=3.18.0','app.js?v=3.18.0','manifest.json','padel-sfeerbanner-v3164.jpg','icons/wepadel-icon-192-v314.png','icons/wepadel-icon-512-v314.png','icons/wepadel-maskable-192-v314.png','icons/wepadel-maskable-512-v314.png','icons/wepadel-apple-touch-v314.png','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-192.png','icons/icon-maskable-512.png'];
+const CACHE='wepadel-v3.18.1-no-api-cache';
+const CORE=['./','index.html','styles.css?v=3.18.1','config.js?v=3.18.1','scoring.js?v=3.18.1','db.js?v=3.18.1','app.js?v=3.18.1','manifest.json','padel-sfeerbanner-v3164.jpg','icons/wepadel-icon-192-v314.png','icons/wepadel-icon-512-v314.png','icons/wepadel-maskable-192-v314.png','icons/wepadel-maskable-512-v314.png','icons/wepadel-apple-touch-v314.png','logo-wepadel-transparent.png','logo-gjmotion-white.png','wepadel-avatar-sprite.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-192.png','icons/icon-maskable-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('message',event=>{ if(event.data==='SKIP_WAITING') self.skipWaiting(); });
@@ -20,6 +20,15 @@ self.addEventListener('push',event=>{
   event.waitUntil(Promise.all([self.registration.showNotification(title,options), typeof self.registration.setAppBadge==='function'&&Number(data.badge)>0?self.registration.setAppBadge(Number(data.badge)):Promise.resolve()]));
 });
 self.addEventListener('notificationclick',event=>{
-  event.notification.close(); const target=new URL(event.notification.data?.url||'./',self.location.origin).href;
-  event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{const existing=list.find(c=>c.url.startsWith(self.location.origin));if(existing){existing.focus();existing.navigate(target);return;}return clients.openWindow(target);}));
+  event.notification.close();
+  const target=new URL(event.notification.data?.url||'./',self.registration.scope).href;
+  event.waitUntil(
+    clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{
+      const existing=list.find(c=>c.url.startsWith(self.registration.scope));
+      if(existing){
+        return existing.focus().then(()=>existing.navigate(target));
+      }
+      return clients.openWindow(target);
+    })
+  );
 });
